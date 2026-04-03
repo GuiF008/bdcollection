@@ -1,6 +1,7 @@
-import { Download, Upload, FileJson, FileSpreadsheet } from "lucide-react";
+import { Download, Upload, FileJson, FileSpreadsheet, Globe } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import ImportForm from "@/components/forms/ImportForm";
+import BedethequeCatalogImport from "@/components/forms/BedethequeCatalogImport";
 
 export default function ImportExportPage() {
   return (
@@ -87,6 +88,18 @@ export default function ImportExportPage() {
             </p>
             <ImportForm />
           </div>
+        </div>
+      </div>
+
+      <div className="mt-8 bg-white rounded-xl border border-border">
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-border">
+          <Globe className="h-5 w-5 text-primary" />
+          <h2 className="text-base font-semibold text-text-primary">
+            Bedetheque — cache catalogue
+          </h2>
+        </div>
+        <div className="p-5">
+          <BedethequeCatalogImport />
         </div>
       </div>
     </div>

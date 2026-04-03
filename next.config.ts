@@ -3,7 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   output: "standalone",
   images: {
-    remotePatterns: [],
+    remotePatterns: [
+      { protocol: "https", hostname: "www.bedetheque.com", pathname: "/**" },
+      { protocol: "https", hostname: "bedetheque.com", pathname: "/**" },
+    ],
     unoptimized: false,
   },
   async rewrites() {
