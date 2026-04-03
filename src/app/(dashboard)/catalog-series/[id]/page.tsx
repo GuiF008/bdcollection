@@ -5,6 +5,8 @@ import PageHeader from "@/components/ui/PageHeader";
 import Badge from "@/components/ui/Badge";
 import CoverImage from "@/components/ui/CoverImage";
 import RefreshCatalogSeriesButton from "@/components/catalog/RefreshCatalogSeriesButton";
+import ImportCatalogToCollectionForm from "@/components/catalog/ImportCatalogToCollectionForm";
+import { getSeriesForSelect } from "@/lib/services/series";
 import { getCatalogSeriesById } from "@/server/scraping/services/series-cache.service";
 import { isCacheStale } from "@/server/scraping/utils/dates";
 
@@ -16,6 +18,7 @@ export default async function CatalogSeriesDetailPage({ params }: Props) {
   if (!data) notFound();
 
   const stale = isCacheStale(data.cacheExpiresAt);
+  const seriesOptions = await getSeriesForSelect();
 
   return (
     <div>
@@ -41,6 +44,13 @@ export default async function CatalogSeriesDetailPage({ params }: Props) {
 
       <div className="mb-8">
         <RefreshCatalogSeriesButton seriesId={data.id} />
+      </div>
+
+      <div className="mb-8">
+        <ImportCatalogToCollectionForm
+          catalogSeriesId={data.id}
+          seriesOptions={seriesOptions}
+        />
       </div>
 
       {data.summary && (
@@ -95,8 +105,8 @@ export default async function CatalogSeriesDetailPage({ params }: Props) {
       </div>
 
       <p className="mt-6 text-xs text-text-muted">
-        Ces lignes ne sont pas votre collection personnelle. Pour en faire des albums de
-        collection, importez ou créez-les depuis les écrans Séries / Albums.
+        Le tableau ci-dessus est le cache Bedetheque. Utilisez le bloc « Importer dans ma
+        collection » pour copier les albums vers vos séries personnelles.
       </p>
     </div>
   );
