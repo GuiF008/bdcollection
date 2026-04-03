@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Series {
+  id              String   @id @default(cuid())
+  title           String
+  normalizedTitle String
+  description     String?
+  authors         String?
+  publisher       String?
+  coverImageUrl   String?
+  personalNotes   String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  albums Album[]
+
+  @@index([normalizedTitle])
+}
+
+model Album {
+  id                  String    @id @default(cuid())
+  seriesId            String
+  title               String
+  normalizedTitle     String
+  author              String?
+  normalizedAuthor    String?
+  publisher           String?
+  normalizedPublisher String?
+  publicationDate     DateTime?
+  volumeNumber        Int?
+  summary             String?
+  coverImageUrl       String?
+  isOriginalEdition   Boolean   @default(false)
+  personalNotes       String?
+
+  // V2 fields
+  externalSource  String?
+  externalId      String?
+  isbn            String?
+  ean             String?
+  editionLabel    String?
+  estimatedValue  Float?
+  valuationSource String?
+  lastSyncAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  series Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+
+  @@index([seriesId])
+  @@index([normalizedTitle])
+  @@index([normalizedAuthor])
+  @@index([normalizedPublisher])
+}
