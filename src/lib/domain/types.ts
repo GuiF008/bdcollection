@@ -45,6 +45,13 @@ export interface AlbumWithSeries {
   };
 }
 
+/** Séries affichées sur le dashboard (vignette + titre). */
+export interface DashboardSeriesPreview {
+  id: string;
+  title: string;
+  coverImageUrl: string | null;
+}
+
 export interface DashboardStats {
   totalAlbums: number;
   totalSeries: number;
@@ -52,6 +59,7 @@ export interface DashboardStats {
   recentAlbums: AlbumWithSeries[];
   publisherDistribution: { publisher: string; count: number }[];
   authorDistribution: { author: string; count: number }[];
+  seriesPreview: DashboardSeriesPreview[];
 }
 
 export interface SearchResult {
@@ -117,4 +125,19 @@ export interface CreateAlbumInput {
 export interface UpdateAlbumInput extends Partial<Omit<CreateAlbumInput, "seriesId">> {
   id: string;
   seriesId?: string;
+}
+
+/** Corps attendu par POST /api/import (JSON ou lignes issues d’un CSV parsé). */
+export interface ImportAlbumInput {
+  serie: string;
+  titre: string;
+  auteur?: string;
+  editeur?: string;
+  dateParution?: string;
+  tome?: number;
+  resume?: string;
+  editionOriginale?: boolean;
+  notesPerso?: string;
+  isbn?: string;
+  ean?: string;
 }

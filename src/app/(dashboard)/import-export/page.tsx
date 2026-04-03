@@ -80,9 +80,10 @@ export default function ImportExportPage() {
           </div>
           <div className="p-5">
             <p className="text-sm text-text-secondary mb-4">
-              Importez des albums depuis un fichier JSON. Le format attendu est
-              un tableau d&apos;objets avec les champs : serie, titre, auteur,
-              editeur, dateParution, tome, editionOriginale.
+              JSON : tableau d&apos;objets (serie, titre, auteur, editeur,
+              dateParution, tome, editionOriginale, etc.). CSV : même
+              information qu&apos;après export « Albums — CSV » (séparateur{" "}
+              point-virgule, en-têtes Serie, Titre, Auteur, …).
             </p>
             <ImportForm />
           </div>

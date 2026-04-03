@@ -46,6 +46,48 @@ export default async function DashboardPage() {
         />
       </div>
 
+      <div className="bg-white rounded-xl border border-border mb-8">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <h2 className="text-base font-semibold text-text-primary">Séries</h2>
+          <Link
+            href="/series"
+            className="text-sm text-primary hover:text-primary-dark font-medium"
+          >
+            Voir tout
+          </Link>
+        </div>
+        {stats.seriesPreview.length === 0 ? (
+          <div className="p-8 text-center text-text-muted text-sm">
+            Aucune série.{" "}
+            <Link href="/series/new" className="text-primary hover:underline">
+              Créer une série
+            </Link>
+          </div>
+        ) : (
+          <div className="p-5">
+            <div className="flex gap-5 overflow-x-auto pb-1 snap-x snap-mandatory">
+              {stats.seriesPreview.map((s) => (
+                <Link
+                  key={s.id}
+                  href={`/series/${s.id}`}
+                  className="flex flex-col items-center gap-2 w-[7.25rem] shrink-0 snap-start text-center group"
+                >
+                  <CoverImage
+                    src={s.coverImageUrl}
+                    alt={s.title}
+                    size="md"
+                    className="ring-1 ring-border group-hover:ring-primary/40 transition-[box-shadow,ring-color]"
+                  />
+                  <p className="text-xs font-medium text-text-primary line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+                    {s.title}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white rounded-xl border border-border">
           <div className="flex items-center justify-between px-5 py-4 border-b border-border">

@@ -2,6 +2,20 @@
 
 import { useState } from "react";
 import { Upload, CheckCircle2, AlertCircle } from "lucide-react";
+import { parseAlbumsCsv } from "@/lib/domain/csvImport";
+import type { ImportAlbumInput } from "@/lib/domain/types";
+
+function parseImportFile(text: string, fileName: string): ImportAlbumInput[] {
+  const lower = fileName.toLowerCase();
+  if (lower.endsWith(".csv")) {
+    return parseAlbumsCsv(text);
+  }
+  const parsed: unknown = JSON.parse(text);
+  if (!Array.isArray(parsed)) {
+    throw new Error("Le JSON doit être un tableau d’albums.");
+  }
+  return parsed as ImportAlbumInput[];
+}
 
 export default function ImportForm() {
   const [loading, setLoading] = useState(false);
@@ -26,7 +40,17 @@ export default function ImportForm() {
 
     try {
       const text = await file.text();
-      const data = JSON.parse(text);
+      const data = parseImportFile(text, file.name);
+
+      if (data.length === 0) {
+        setResult({
+          success: false,
+          message:
+            "Aucune ligne importable (vérifiez les colonnes obligatoires Serie et Titre, ou un fichier JSON non vide).",
+        });
+        setLoading(false);
+        return;
+      }
 
       const res = await fetch("/api/import", {
         method: "POST",
@@ -47,10 +71,15 @@ export default function ImportForm() {
           message: json.error || "Erreur lors de l'import.",
         });
       }
-    } catch {
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : "Erreur inconnue lors de la lecture du fichier.";
       setResult({
         success: false,
-        message: "Fichier invalide. Vérifiez le format JSON.",
+        message:
+          msg.includes("JSON") || msg.includes("CSV") || msg.includes("colonne")
+            ? msg
+            : `Fichier invalide. Utilisez un JSON (tableau) ou un CSV avec les colonnes attendues. Détail : ${msg}`,
       });
     } finally {
       setLoading(false);
@@ -62,7 +91,7 @@ export default function ImportForm() {
       <input
         name="file"
         type="file"
-        accept=".json"
+        accept=".json,.csv,text/csv,application/json"
         className="w-full text-sm text-text-secondary file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20 file:cursor-pointer"
       />
 

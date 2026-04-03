@@ -1,24 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { normalize } from "@/lib/domain/normalize";
-
-interface ImportAlbum {
-  serie: string;
-  titre: string;
-  auteur?: string;
-  editeur?: string;
-  dateParution?: string;
-  tome?: number;
-  resume?: string;
-  editionOriginale?: boolean;
-  notesPerso?: string;
-  isbn?: string;
-  ean?: string;
-}
+import type { ImportAlbumInput } from "@/lib/domain/types";
 
 export async function POST(request: NextRequest) {
   try {
-    const data: ImportAlbum[] = await request.json();
+    const data: ImportAlbumInput[] = await request.json();
 
     if (!Array.isArray(data)) {
       return NextResponse.json(
