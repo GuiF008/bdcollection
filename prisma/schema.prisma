@@ -60,3 +60,102 @@ model Album {
   @@index([normalizedAuthor])
   @@index([normalizedPublisher])
 }
+
+// --- Cache catalogue externe (Bedetheque, etc.) — distinct de Series/Album collection ---
+
+enum CatalogSource {
+  bedetheque
+}
+
+enum ImportJobStatus {
+  pending
+  running
+  success
+  partial_success
+  failed
+}
+
+model CatalogSeries {
+  id               String        @id @default(cuid())
+  source           CatalogSource
+  sourceSeriesId   String
+  sourceUrl        String
+  title            String
+  slug             String
+  universe         String?
+  summary          String?
+  status           String?
+  albumCount       Int           @default(0)
+  rawPayload       Json?
+  firstFetchedAt   DateTime
+  lastFetchedAt    DateTime
+  lastRefreshAt    DateTime?
+  cacheExpiresAt   DateTime
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  albums CatalogAlbum[]
+  jobs   ImportJob[]
+
+  @@unique([source, sourceSeriesId])
+  @@index([slug])
+  @@index([title])
+  @@map("catalog_series")
+}
+
+model CatalogAlbum {
+  id                 String   @id @default(cuid())
+  catalogSeriesId    String
+  sourceAlbumId      String
+  code               String?
+  volumeNumber       Int?
+  volumeLabel        String?
+  title              String
+  subtitle           String?
+  authorsText        String?
+  publisher          String?
+  publicationDate    DateTime?
+  legalDeposit       String?
+  isbn               String?
+  pageCount          Int?
+  format             String?
+  weight             String?
+  rating             Float?
+  ratingCount        Int?
+  estimate           String?
+  editionLabel       String?
+  isOriginalEdition  Boolean?
+  coverImageUrl      String?
+  summary            String?
+  rawPayload         Json?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  series CatalogSeries @relation(fields: [catalogSeriesId], references: [id], onDelete: Cascade)
+
+  @@unique([catalogSeriesId, sourceAlbumId])
+  @@index([catalogSeriesId])
+  @@index([isbn])
+  @@map("catalog_albums")
+}
+
+model ImportJob {
+  id              String           @id @default(cuid())
+  source          CatalogSource
+  sourceUrl       String
+  status          ImportJobStatus    @default(pending)
+  startedAt       DateTime?
+  finishedAt      DateTime?
+  catalogSeriesId String?
+  logs            String           @default("")
+  errorMessage    String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  series CatalogSeries? @relation(fields: [catalogSeriesId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([sourceUrl])
+  @@index([createdAt])
+  @@map("import_jobs")
+}
