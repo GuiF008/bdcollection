@@ -10,6 +10,8 @@ import CoverImage from "@/components/ui/CoverImage";
 import Badge from "@/components/ui/Badge";
 import CollectionItemForm from "@/components/collection/CollectionItemForm";
 import InitCollectionPanel from "@/components/collection/InitCollectionPanel";
+import AlbumReferenceEditForm from "@/components/collection/AlbumReferenceEditForm";
+import SeriesReferenceInlineEdit from "@/components/collection/SeriesReferenceInlineEdit";
 import { getAlbumReferenceDetail } from "@/lib/services/collectionItems.service";
 import RemoveFromCollectionButton from "@/components/collection/RemoveFromCollectionButton";
 
@@ -100,6 +102,27 @@ export default async function AlbumReferenceDetailPage({
                 <p className="text-xs text-text-muted mb-2">Résumé</p>
                 <p className="text-sm text-text-secondary whitespace-pre-line">{detail.summary}</p>
               </div>
+            )}
+            {primary && (
+              <>
+                <AlbumReferenceEditForm album={detail} />
+                <div className="mt-4 pt-4 border-t border-border">
+                  <p className="text-xs font-medium text-text-muted mb-2">Série</p>
+                  <SeriesReferenceInlineEdit
+                    series={{
+                      id: sr.id,
+                      title: sr.title,
+                      slug: sr.slug,
+                      source: sr.source,
+                      summary: sr.summary,
+                      universe: sr.universe,
+                      coverImageUrl: sr.coverImageUrl,
+                      authors: sr.authors,
+                      publisher: sr.publisher,
+                    }}
+                  />
+                </div>
+              </>
             )}
           </div>
 

@@ -63,6 +63,8 @@ export async function POST(request: NextRequest) {
               sourceUrl: "",
               title: item.serie,
               slug: slugify(item.serie),
+              authors: item.auteur || null,
+              publisher: item.editeur || null,
               albumCount: 0,
               firstFetchedAt: now,
               lastFetchedAt: now,

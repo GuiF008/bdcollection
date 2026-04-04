@@ -1,9 +1,23 @@
 import type { AlbumReference, CollectionItem, SeriesReference } from "@/generated/prisma/client";
 
+/** Série telle que chargée pour la page collection (regroupement + en-tête). */
+export type SeriesRefForCollection = Pick<
+  SeriesReference,
+  | "id"
+  | "title"
+  | "slug"
+  | "source"
+  | "summary"
+  | "universe"
+  | "coverImageUrl"
+  | "authors"
+  | "publisher"
+>;
+
 /** Item de collection avec fiche album et série (forme renvoyée par les services). */
 export type CollectionItemWithRef = CollectionItem & {
   albumReference: AlbumReference & {
-    seriesReference: Pick<SeriesReference, "id" | "title" | "slug" | "source">;
+    seriesReference: SeriesRefForCollection;
   };
 };
 

@@ -106,7 +106,12 @@ export async function getCollectionItemsWithRefs(filters?: CollectionListFilters
             { publisher: { contains: term, mode: "insensitive" } },
             {
               seriesReference: {
-                title: { contains: term, mode: "insensitive" },
+                OR: [
+                  { title: { contains: term, mode: "insensitive" } },
+                  { summary: { contains: term, mode: "insensitive" } },
+                  { authors: { contains: term, mode: "insensitive" } },
+                  { publisher: { contains: term, mode: "insensitive" } },
+                ],
               },
             },
           ],
@@ -136,7 +141,19 @@ export async function getCollectionItemsWithRefs(filters?: CollectionListFilters
     include: {
       albumReference: {
         include: {
-          seriesReference: { select: { id: true, title: true, slug: true, source: true } },
+          seriesReference: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              source: true,
+              summary: true,
+              universe: true,
+              coverImageUrl: true,
+              authors: true,
+              publisher: true,
+            },
+          },
         },
       },
     },
@@ -161,7 +178,19 @@ export async function getAlbumReferenceDetail(albumReferenceId: string) {
         include: {
           albumReference: {
             include: {
-              seriesReference: { select: { id: true, title: true, slug: true, source: true } },
+              seriesReference: {
+                select: {
+                  id: true,
+                  title: true,
+                  slug: true,
+                  source: true,
+                  summary: true,
+                  universe: true,
+                  coverImageUrl: true,
+                  authors: true,
+                  publisher: true,
+                },
+              },
             },
           },
         },

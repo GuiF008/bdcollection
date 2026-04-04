@@ -8,7 +8,10 @@ import CollectionListClient from "@/components/collection/CollectionListClient";
 import { getCollectionItemsWithRefs } from "@/lib/services/collectionItems.service";
 import { prisma } from "@/lib/db/prisma";
 
-export default async function CollectionPage() {
+type SearchParams = Promise<{ dup?: string; eo?: string }>;
+
+export default async function CollectionPage({ searchParams }: { searchParams: SearchParams }) {
+  const sp = await searchParams;
   const [items, seriesOptions] = await Promise.all([
     getCollectionItemsWithRefs({
       sortField: "createdAt",
@@ -24,7 +27,7 @@ export default async function CollectionPage() {
     <div>
       <PageHeader
         title="Ma collection"
-        description="Uniquement les albums que vous possédez réellement, avec l’état, l’EO et vos notes."
+        description="Regroupée par série : résumé et métadonnées de la série, puis vos albums. Cochez plusieurs tomes pour une action groupée."
         actions={
           <Link
             href="/import-export"
@@ -44,7 +47,12 @@ export default async function CollectionPage() {
           actionHref="/catalog"
         />
       ) : (
-        <CollectionListClient items={items} seriesOptions={seriesOptions} />
+        <CollectionListClient
+          items={items}
+          seriesOptions={seriesOptions}
+          initialDupOnly={sp.dup === "1"}
+          initialEoOnly={sp.eo === "1"}
+        />
       )}
     </div>
   );

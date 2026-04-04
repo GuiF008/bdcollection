@@ -77,6 +77,8 @@ model SeriesReference {
   status         String?
   albumCount     Int           @default(0)
   coverImageUrl  String?
+  authors        String?
+  publisher      String?
   sourceName     String?
   rawPayload     Json?
   firstFetchedAt DateTime

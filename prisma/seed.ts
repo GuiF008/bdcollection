@@ -33,6 +33,8 @@ async function main() {
       title: "Tintin (démo locale)",
       slug: "tintin-demo",
       summary: "Jeu de données de démonstration — catalogue + collection.",
+      authors: "Hergé",
+      publisher: "Casterman",
       albumCount: 2,
       firstFetchedAt: now,
       lastFetchedAt: now,

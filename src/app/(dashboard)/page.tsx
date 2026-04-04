@@ -27,12 +27,48 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 mb-8">
-        <KpiCard title="Séries (catalogue)" value={stats.seriesImported} icon={Library} color="secondary" />
-        <KpiCard title="Albums référencés" value={stats.albumsReferenced} icon={Layers} color="primary" />
-        <KpiCard title="Dans ma collection" value={stats.itemsInCollection} icon={BookOpen} color="success" />
-        <KpiCard title="EO confirmées" value={stats.confirmedFirstEditions} icon={Star} color="accent" />
-        <KpiCard title="Manquants" value={stats.missingOwned} icon={AlertCircle} color="accent" />
-        <KpiCard title="Doublons" value={stats.duplicateCount} icon={Copy} color="secondary" />
+        <KpiCard
+          title="Séries (catalogue)"
+          value={stats.seriesImported}
+          icon={Library}
+          color="secondary"
+          href="/catalog"
+        />
+        <KpiCard
+          title="Albums référencés"
+          value={stats.albumsReferenced}
+          icon={Layers}
+          color="primary"
+          href="/catalog"
+        />
+        <KpiCard
+          title="Dans ma collection"
+          value={stats.itemsInCollection}
+          icon={BookOpen}
+          color="success"
+          href="/collection"
+        />
+        <KpiCard
+          title="EO confirmées"
+          value={stats.confirmedFirstEditions}
+          icon={Star}
+          color="accent"
+          href="/collection?eo=1"
+        />
+        <KpiCard
+          title="Manquants"
+          value={stats.missingOwned}
+          icon={AlertCircle}
+          color="accent"
+          href="/catalog"
+        />
+        <KpiCard
+          title="Doublons"
+          value={stats.duplicateCount}
+          icon={Copy}
+          color="secondary"
+          href="/collection?dup=1"
+        />
       </div>
 
       <div className="bg-white rounded-xl border border-border mb-8">
