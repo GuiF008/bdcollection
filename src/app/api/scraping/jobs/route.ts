@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     orderBy: { createdAt: "desc" },
     take: limit,
     include: {
-      series: { select: { id: true, title: true, sourceSeriesId: true } },
+      seriesReference: { select: { id: true, title: true, sourceSeriesId: true } },
     },
   });
 

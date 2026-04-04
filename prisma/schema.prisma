@@ -7,64 +7,11 @@ datasource db {
   provider = "postgresql"
 }
 
-model Series {
-  id              String   @id @default(cuid())
-  title           String
-  normalizedTitle String
-  description     String?
-  authors         String?
-  publisher       String?
-  coverImageUrl   String?
-  personalNotes   String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  albums Album[]
-
-  @@index([normalizedTitle])
-}
-
-model Album {
-  id                  String    @id @default(cuid())
-  seriesId            String
-  title               String
-  normalizedTitle     String
-  author              String?
-  normalizedAuthor    String?
-  publisher           String?
-  normalizedPublisher String?
-  publicationDate     DateTime?
-  volumeNumber        Int?
-  summary             String?
-  coverImageUrl       String?
-  isOriginalEdition   Boolean   @default(false)
-  personalNotes       String?
-
-  // V2 fields
-  externalSource  String?
-  externalId      String?
-  isbn            String?
-  ean             String?
-  editionLabel    String?
-  estimatedValue  Float?
-  valuationSource String?
-  lastSyncAt      DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  series Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
-
-  @@index([seriesId])
-  @@index([normalizedTitle])
-  @@index([normalizedAuthor])
-  @@index([normalizedPublisher])
-}
-
-// --- Cache catalogue externe (Bedetheque, etc.) — distinct de Series/Album collection ---
+// --- Sources catalogue (V3 : plusieurs providers) ---
 
 enum CatalogSource {
   bedetheque
+  local
 }
 
 enum ImportJobStatus {
@@ -75,44 +22,89 @@ enum ImportJobStatus {
   failed
 }
 
-model CatalogSeries {
-  id               String        @id @default(cuid())
-  source           CatalogSource
-  sourceSeriesId   String
-  sourceUrl        String
-  title            String
-  slug             String
-  universe         String?
-  summary          String?
-  status           String?
-  albumCount       Int           @default(0)
-  rawPayload       Json?
-  firstFetchedAt   DateTime
-  lastFetchedAt    DateTime
-  lastRefreshAt    DateTime?
-  cacheExpiresAt   DateTime
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+enum OwnershipStatus {
+  NOT_OWNED
+  OWNED
+  WANTED
+  HUNTING
+  DUPLICATE
+}
 
-  albums CatalogAlbum[]
-  jobs   ImportJob[]
+enum EditionStatus {
+  UNKNOWN
+  FIRST_EDITION
+  NOT_FIRST_EDITION
+}
+
+enum EditionConfidence {
+  TO_VERIFY
+  PROBABLE
+  CONFIRMED
+}
+
+enum ConditionGrade {
+  UNKNOWN
+  MINT
+  EXCELLENT
+  VERY_GOOD
+  GOOD
+  FAIR
+  POOR
+}
+
+enum CompletenessStatus {
+  COMPLETE
+  INCOMPLETE
+  UNKNOWN
+}
+
+enum SearchStatus {
+  NONE
+  WANTED
+  HUNTING
+}
+
+/// Données importées / référentiel (≠ possession)
+model SeriesReference {
+  id             String        @id @default(cuid())
+  source         CatalogSource
+  sourceSeriesId String
+  sourceUrl      String
+  title          String
+  slug           String
+  universe       String?
+  summary        String?
+  status         String?
+  albumCount     Int           @default(0)
+  coverImageUrl  String?
+  sourceName     String?
+  rawPayload     Json?
+  firstFetchedAt DateTime
+  lastFetchedAt  DateTime
+  lastRefreshAt  DateTime?
+  cacheExpiresAt DateTime
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  albums   AlbumReference[]
+  importJobs ImportJob[]
 
   @@unique([source, sourceSeriesId])
   @@index([slug])
   @@index([title])
-  @@map("catalog_series")
+  @@map("series_references")
 }
 
-model CatalogAlbum {
-  id                 String   @id @default(cuid())
-  catalogSeriesId    String
-  sourceAlbumId      String
+model AlbumReference {
+  id                 String    @id @default(cuid())
+  seriesReferenceId  String
+  externalId         String
   code               String?
   volumeNumber       Int?
   volumeLabel        String?
   title              String
   subtitle           String?
-  authorsText        String?
+  authors            String?
   publisher          String?
   publicationDate    DateTime?
   legalDeposit       String?
@@ -128,31 +120,64 @@ model CatalogAlbum {
   coverImageUrl      String?
   summary            String?
   rawPayload         Json?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  knownEditionsCount Int       @default(0)
+  sourceName         String?
+  sourceAlbumUrl     String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  series CatalogSeries @relation(fields: [catalogSeriesId], references: [id], onDelete: Cascade)
+  seriesReference SeriesReference @relation(fields: [seriesReferenceId], references: [id], onDelete: Cascade)
+  collectionItems CollectionItem[]
 
-  @@unique([catalogSeriesId, sourceAlbumId])
-  @@index([catalogSeriesId])
+  @@unique([seriesReferenceId, externalId])
+  @@index([seriesReferenceId])
   @@index([isbn])
-  @@map("catalog_albums")
+  @@map("album_references")
+}
+
+/// Exemplaire / suivi personnel lié à une fiche catalogue
+model CollectionItem {
+  id                String              @id @default(cuid())
+  albumReferenceId  String
+  ownershipStatus   OwnershipStatus     @default(NOT_OWNED)
+  searchStatus      SearchStatus        @default(NONE)
+  editionStatus     EditionStatus       @default(UNKNOWN)
+  editionConfidence EditionConfidence   @default(TO_VERIFY)
+  conditionGrade    ConditionGrade      @default(UNKNOWN)
+  completenessStatus CompletenessStatus @default(UNKNOWN)
+  hasPersonalPhoto  Boolean             @default(false)
+  personalPhotoUrl  String?
+  purchasePrice     Decimal?            @db.Decimal(12, 2)
+  purchaseDate      DateTime?
+  purchaseSource    String?
+  notes             String?
+  isDuplicate       Boolean             @default(false)
+  quantity          Int                 @default(1)
+  metadataJson      Json?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  albumReference AlbumReference @relation(fields: [albumReferenceId], references: [id], onDelete: Cascade)
+
+  @@index([albumReferenceId])
+  @@index([ownershipStatus])
+  @@map("collection_items")
 }
 
 model ImportJob {
-  id              String           @id @default(cuid())
-  source          CatalogSource
-  sourceUrl       String
-  status          ImportJobStatus    @default(pending)
-  startedAt       DateTime?
-  finishedAt      DateTime?
-  catalogSeriesId String?
-  logs            String           @default("")
-  errorMessage    String?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  id                String            @id @default(cuid())
+  source            CatalogSource
+  sourceUrl         String
+  status            ImportJobStatus   @default(pending)
+  startedAt         DateTime?
+  finishedAt        DateTime?
+  seriesReferenceId String?
+  logs              String            @default("")
+  errorMessage      String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
-  series CatalogSeries? @relation(fields: [catalogSeriesId], references: [id], onDelete: SetNull)
+  seriesReference SeriesReference? @relation(fields: [seriesReferenceId], references: [id], onDelete: SetNull)
 
   @@index([status])
   @@index([sourceUrl])

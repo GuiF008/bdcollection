@@ -29,11 +29,11 @@ function parsePublicationDate(s: string | null): Date | null {
   return null;
 }
 
-export function toCatalogSeriesCreate(
+export function toSeriesReferenceCreate(
   series: NormalizedSeries,
   now: Date,
   albumCount: number
-): Prisma.CatalogSeriesCreateInput {
+): Prisma.SeriesReferenceCreateInput {
   if (!series.sourceSeriesId || !series.titre || !series.slug) {
     throw new Error("Série normalisée incomplète (id, titre ou slug manquant)");
   }
@@ -53,14 +53,15 @@ export function toCatalogSeriesCreate(
     lastFetchedAt: now,
     lastRefreshAt: null,
     cacheExpiresAt: cacheExpiresFromFetchedAt(now),
+    sourceName: "bedetheque",
   };
 }
 
-export function toCatalogSeriesUpdate(
+export function toSeriesReferenceUpdate(
   series: NormalizedSeries,
   now: Date,
   albumCount: number
-): Prisma.CatalogSeriesUpdateInput {
+): Prisma.SeriesReferenceUpdateInput {
   return {
     sourceUrl: series.sourceUrl,
     title: series.titre ?? undefined,
@@ -73,6 +74,7 @@ export function toCatalogSeriesUpdate(
     lastFetchedAt: now,
     lastRefreshAt: now,
     cacheExpiresAt: cacheExpiresFromFetchedAt(now),
+    sourceName: "bedetheque",
   };
 }
 
@@ -82,11 +84,11 @@ function legalDepositFromRaw(raw: unknown): string | null {
   return labels["Dépot légal"] ?? labels["Dépôt légal"] ?? null;
 }
 
-export function toCatalogAlbumUpsert(
-  catalogSeriesId: string,
+export function toAlbumReferenceUpsert(
+  seriesReferenceId: string,
   album: NormalizedAlbum,
   now: Date
-): { create: Prisma.CatalogAlbumCreateInput; update: Prisma.CatalogAlbumUpdateInput } {
+): { create: Prisma.AlbumReferenceCreateInput; update: Prisma.AlbumReferenceUpdateInput } {
   if (!album.sourceAlbumId) {
     throw new Error("Album sans sourceAlbumId");
   }
@@ -94,13 +96,13 @@ export function toCatalogAlbumUpsert(
   const legalDeposit = legalDepositFromRaw(album.raw);
 
   const base = {
-    sourceAlbumId: album.sourceAlbumId,
+    externalId: album.sourceAlbumId,
     code: album.code,
     volumeNumber,
     volumeLabel,
     title: album.titre ?? "Sans titre",
     subtitle: null as string | null,
-    authorsText: album.auteur,
+    authors: album.auteur,
     publisher: album.editeur,
     publicationDate: parsePublicationDate(album.dateParution),
     legalDeposit,
@@ -116,12 +118,14 @@ export function toCatalogAlbumUpsert(
     coverImageUrl: album.coverImageUrl,
     summary: album.resume,
     rawPayload: album.raw === undefined ? undefined : (album.raw as Prisma.InputJsonValue),
+    sourceName: "bedetheque",
+    knownEditionsCount: 0,
   };
 
   return {
     create: {
       ...base,
-      series: { connect: { id: catalogSeriesId } },
+      seriesReference: { connect: { id: seriesReferenceId } },
     },
     update: {
       ...base,

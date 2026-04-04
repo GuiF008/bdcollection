@@ -9,12 +9,13 @@ import {
   Settings,
   Download,
   X,
+  Layers,
 } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Albums", href: "/albums", icon: BookOpen },
-  { name: "Séries", href: "/series", icon: Library },
+  { name: "Catalogue importé", href: "/catalog", icon: Library },
+  { name: "Ma collection", href: "/collection", icon: BookOpen },
   { name: "Import / Export", href: "/import-export", icon: Download },
   { name: "Paramètres", href: "/settings", icon: Settings },
 ];
@@ -86,8 +87,9 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
         </nav>
 
         <div className="px-4 py-4 border-t border-border">
-          <p className="text-xs text-text-muted text-center">
-            BD Collection — MVP v1.0
+          <p className="text-xs text-text-muted text-center flex items-center justify-center gap-1">
+            <Layers className="h-3 w-3" />
+            BD Collection — V2
           </p>
         </div>
       </aside>

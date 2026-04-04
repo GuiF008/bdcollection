@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { ImportJobStatus } from "@/generated/prisma/enums";
-import { refreshCatalogSeries } from "@/server/scraping/services/refresh-series.service";
-import { getCatalogSeriesById, withStaleFlag } from "@/server/scraping/services/series-cache.service";
+import { refreshSeriesReference } from "@/server/scraping/services/refresh-series.service";
+import { getSeriesReferenceById, withStaleFlag } from "@/server/scraping/services/series-cache.service";
 
 const bodySchema = z.object({
   seriesId: z.string().min(1),
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await refreshCatalogSeries(parsed.data.seriesId);
+    const result = await refreshSeriesReference(parsed.data.seriesId);
 
     if (result.status === ImportJobStatus.failed) {
       return NextResponse.json(
@@ -33,9 +33,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const full = result.catalogSeriesId
-      ? await getCatalogSeriesById(result.catalogSeriesId)
-      : await getCatalogSeriesById(parsed.data.seriesId);
+    const full = result.seriesReferenceId
+      ? await getSeriesReferenceById(result.seriesReferenceId)
+      : await getSeriesReferenceById(parsed.data.seriesId);
 
     return NextResponse.json({
       jobId: result.jobId,

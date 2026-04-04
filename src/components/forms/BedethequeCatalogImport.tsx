@@ -95,10 +95,10 @@ export default function BedethequeCatalogImport() {
   return (
     <div className="space-y-4">
       <p className="text-sm text-text-secondary">
-        Collez l’URL d’une page série Bedetheque (pas une fiche album seule). Les données sont
-        enregistrées dans le cache catalogue (séparé de votre collection). Si la série est déjà
-        en cache, rien n’est re-téléchargé tant que vous n’utilisez pas « Rafraîchir » sur la page
-        de détail.
+        Collez l’URL d’une page série Bedetheque (pas une fiche album seule). Les données alimentent
+        le catalogue importé (référentiel). Ce n’est pas une possession : ajoutez ensuite les albums
+        à votre collection depuis la fiche série. Si la série est déjà en cache, rien n’est re-téléchargé
+        tant que vous n’utilisez pas « Rafraîchir » sur la page de détail.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-3">
@@ -193,7 +193,7 @@ export default function BedethequeCatalogImport() {
               )}
             <div className="flex flex-wrap gap-2 pt-1">
               <Link
-                href={`/catalog-series/${seriesBlock.id}`}
+                href={`/catalog/${seriesBlock.id}`}
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
               >
                 Voir le cache de cette série

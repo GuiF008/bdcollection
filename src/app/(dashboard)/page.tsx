@@ -1,223 +1,106 @@
 export const dynamic = "force-dynamic";
 
-import { BookOpen, Library, Star, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import { getDashboardStats } from "@/lib/services/dashboard";
+import {
+  BookOpen,
+  Library,
+  Star,
+  Target,
+  Copy,
+  AlertCircle,
+  Layers,
+} from "lucide-react";
+import { getDashboardV2Stats } from "@/lib/services/collectionItems.service";
 import KpiCard from "@/components/ui/KpiCard";
 import CoverImage from "@/components/ui/CoverImage";
-import Badge from "@/components/ui/Badge";
 
 export default async function DashboardPage() {
-  const stats = await getDashboardStats();
+  const stats = await getDashboardV2Stats();
 
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-text-primary">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-text-primary">Tableau de bord</h1>
         <p className="text-sm text-text-secondary mt-0.5">
-          Vue d&apos;ensemble de votre collection
+          Catalogue importé et collection personnelle sont séparés : les chiffres reflètent cette distinction.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <KpiCard
-          title="Albums"
-          value={stats.totalAlbums}
-          icon={BookOpen}
-          color="primary"
-        />
-        <KpiCard
-          title="Séries"
-          value={stats.totalSeries}
-          icon={Library}
-          color="secondary"
-        />
-        <KpiCard
-          title="Éditions originales"
-          value={stats.originalEditions}
-          icon={Star}
-          color="accent"
-        />
-        <KpiCard
-          title="Éditeurs"
-          value={stats.publisherDistribution.length}
-          icon={TrendingUp}
-          color="success"
-        />
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 mb-8">
+        <KpiCard title="Séries (catalogue)" value={stats.seriesImported} icon={Library} color="secondary" />
+        <KpiCard title="Albums référencés" value={stats.albumsReferenced} icon={Layers} color="primary" />
+        <KpiCard title="Dans ma collection" value={stats.itemsInCollection} icon={BookOpen} color="success" />
+        <KpiCard title="EO confirmées" value={stats.confirmedFirstEditions} icon={Star} color="accent" />
+        <KpiCard title="Manquants" value={stats.missingOwned} icon={AlertCircle} color="accent" />
+        <KpiCard title="Doublons" value={stats.duplicateCount} icon={Copy} color="secondary" />
       </div>
 
       <div className="bg-white rounded-xl border border-border mb-8">
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-          <h2 className="text-base font-semibold text-text-primary">Séries</h2>
-          <Link
-            href="/series"
-            className="text-sm text-primary hover:text-primary-dark font-medium"
-          >
-            Voir tout
+          <h2 className="text-base font-semibold text-text-primary flex items-center gap-2">
+            <Target className="h-4 w-4 text-primary" />
+            Séries suivies
+          </h2>
+          <Link href="/catalog" className="text-sm text-primary hover:underline font-medium">
+            Catalogue
           </Link>
         </div>
-        {stats.seriesPreview.length === 0 ? (
+        {stats.seriesProgress.length === 0 ? (
           <div className="p-8 text-center text-text-muted text-sm">
-            Aucune série.{" "}
-            <Link href="/series/new" className="text-primary hover:underline">
-              Créer une série
-            </Link>
+            Importez une série pour commencer le suivi.
           </div>
         ) : (
-          <div className="p-5">
-            <div className="flex gap-5 overflow-x-auto pb-1 snap-x snap-mandatory">
-              {stats.seriesPreview.map((s) => (
-                <Link
-                  key={s.id}
-                  href={`/series/${s.id}`}
-                  className="flex flex-col items-center gap-2 w-[7.25rem] shrink-0 snap-start text-center group"
-                >
-                  <CoverImage
-                    src={s.coverImageUrl}
-                    alt={s.title}
-                    size="md"
-                    className="ring-1 ring-border group-hover:ring-primary/40 transition-[box-shadow,ring-color]"
-                  />
-                  <p className="text-xs font-medium text-text-primary line-clamp-2 leading-snug group-hover:text-primary transition-colors">
-                    {s.title}
-                  </p>
-                </Link>
-              ))}
-            </div>
-          </div>
+          <ul className="divide-y divide-border">
+            {stats.seriesProgress.slice(0, 12).map((s) => {
+              const pct = s.totalRefs > 0 ? Math.round((s.owned / s.totalRefs) * 100) : 0;
+              return (
+                <li key={s.id}>
+                  <Link
+                    href={`/catalog/${s.id}`}
+                    className="flex items-center gap-4 px-5 py-4 hover:bg-surface-alt/40 transition-colors"
+                  >
+                    <CoverImage src={s.coverImageUrl} alt={s.title} size="sm" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-text-primary truncate">{s.title}</p>
+                      <p className="text-xs text-text-muted mt-0.5">
+                        Possédés {s.owned} / {s.totalRefs} · EO confirmées {s.confirmedEo} · Manquants{" "}
+                        {s.missing}
+                      </p>
+                      <div className="mt-2 h-1.5 rounded-full bg-surface-alt overflow-hidden max-w-md">
+                        <div
+                          className="h-full rounded-full bg-primary transition-all"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                    <span className="text-sm font-semibold text-primary shrink-0">{pct}%</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-xl border border-border">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-            <h2 className="text-base font-semibold text-text-primary">
-              Derniers ajouts
-            </h2>
-            <Link
-              href="/albums"
-              className="text-sm text-primary hover:text-primary-dark font-medium"
-            >
-              Voir tout
-            </Link>
-          </div>
-          {stats.recentAlbums.length === 0 ? (
-            <div className="p-8 text-center text-text-muted text-sm">
-              Aucun album pour le moment.{" "}
-              <Link href="/albums/new" className="text-primary hover:underline">
-                Ajouter votre premier album
-              </Link>
-            </div>
-          ) : (
-            <div className="divide-y divide-border">
-              {stats.recentAlbums.map((album) => (
-                <Link
-                  key={album.id}
-                  href={`/albums/${album.id}`}
-                  className="flex items-center gap-4 px-5 py-3 hover:bg-surface-alt transition-colors"
-                >
-                  <CoverImage
-                    src={album.coverImageUrl}
-                    alt={album.title}
-                    size="sm"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-text-primary truncate">
-                      {album.title}
-                    </p>
-                    <p className="text-xs text-text-muted truncate">
-                      {album.series.title}
-                      {album.author && ` — ${album.author}`}
-                    </p>
-                  </div>
-                  {album.isOriginalEdition && (
-                    <Badge variant="success">EO</Badge>
-                  )}
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-border">
-            <div className="px-5 py-4 border-b border-border">
-              <h2 className="text-base font-semibold text-text-primary">
-                Par éditeur
-              </h2>
-            </div>
-            {stats.publisherDistribution.length === 0 ? (
-              <div className="p-4 text-sm text-text-muted text-center">
-                Aucune donnée
-              </div>
-            ) : (
-              <div className="p-4 space-y-3">
-                {stats.publisherDistribution.map((item) => (
-                  <div key={item.publisher} className="flex items-center gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-text-primary truncate">
-                        {item.publisher}
-                      </p>
-                    </div>
-                    <span className="text-sm font-medium text-text-secondary">
-                      {item.count}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="bg-white rounded-xl border border-border">
-            <div className="px-5 py-4 border-b border-border">
-              <h2 className="text-base font-semibold text-text-primary">
-                Par auteur
-              </h2>
-            </div>
-            {stats.authorDistribution.length === 0 ? (
-              <div className="p-4 text-sm text-text-muted text-center">
-                Aucune donnée
-              </div>
-            ) : (
-              <div className="p-4 space-y-3">
-                {stats.authorDistribution.map((item) => (
-                  <div key={item.author} className="flex items-center gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-text-primary truncate">
-                        {item.author}
-                      </p>
-                    </div>
-                    <span className="text-sm font-medium text-text-secondary">
-                      {item.count}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="bg-white rounded-xl border border-border p-5">
-            <h2 className="text-base font-semibold text-text-primary mb-4">
-              Actions rapides
-            </h2>
-            <div className="space-y-2">
-              <Link
-                href="/albums/new"
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-primary hover:bg-primary/5 transition-colors font-medium"
-              >
-                <BookOpen className="h-4 w-4" />
-                Ajouter un album
-              </Link>
-              <Link
-                href="/series/new"
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-primary hover:bg-primary/5 transition-colors font-medium"
-              >
-                <Library className="h-4 w-4" />
-                Créer une série
-              </Link>
-            </div>
-          </div>
-        </div>
+      <div className="flex flex-wrap gap-3">
+        <Link
+          href="/catalog"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium"
+        >
+          Parcourir le catalogue
+        </Link>
+        <Link
+          href="/collection"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium text-text-secondary"
+        >
+          Ma collection
+        </Link>
+        <Link
+          href="/import-export"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium text-text-secondary"
+        >
+          Import / Export
+        </Link>
       </div>
     </div>
   );

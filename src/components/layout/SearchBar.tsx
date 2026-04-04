@@ -119,7 +119,7 @@ export default function SearchBar() {
                 href={
                   item.type === "album"
                     ? `/albums/${item.id}`
-                    : `/series/${item.id}`
+                    : `/catalog/${item.id}`
                 }
                 onClick={() => {
                   setIsOpen(false);

@@ -23,7 +23,7 @@ export default function SettingsPage() {
                 Application
               </h3>
               <p className="text-sm text-text-secondary mt-1">
-                BD Collection — MVP v1.0
+                BD Collection — V2 (catalogue / collection)
               </p>
               <p className="text-xs text-text-muted mt-0.5">
                 Application self-hosted de gestion de collection de bandes dessinées.

@@ -5,9 +5,9 @@ import { extractSourceSeriesIdFromSerieUrl } from "../parsers/bedetheque-series.
 import { scrapeLog } from "../utils/logger";
 import { normalizeSerieUrl } from "./url-normalize";
 import {
-  toCatalogAlbumUpsert,
-  toCatalogSeriesCreate,
-  toCatalogSeriesUpdate,
+  toAlbumReferenceUpsert,
+  toSeriesReferenceCreate,
+  toSeriesReferenceUpdate,
 } from "./catalog-mapper";
 
 async function appendJobLog(jobId: string, line: string) {
@@ -29,7 +29,7 @@ function providerFor(source: CatalogSource) {
 
 export type ImportCatalogResult = {
   jobId: string;
-  catalogSeriesId: string | null;
+  seriesReferenceId: string | null;
   status: ImportJobStatus;
   warnings: string[];
   errorMessage: string | null;
@@ -46,7 +46,7 @@ export async function runCatalogImport(params: {
     throw new Error("URL de série Bedetheque invalide");
   }
 
-  const existingSeries = await prisma.catalogSeries.findUnique({
+  const existingSeries = await prisma.seriesReference.findUnique({
     where: {
       source_sourceSeriesId: {
         source: params.source,
@@ -55,11 +55,11 @@ export async function runCatalogImport(params: {
     },
   });
 
-  const orRunning: Array<{ sourceUrl: string } | { catalogSeriesId: string }> = [
+  const orRunning: Array<{ sourceUrl: string } | { seriesReferenceId: string }> = [
     { sourceUrl: normalizedUrl },
   ];
   if (existingSeries) {
-    orRunning.push({ catalogSeriesId: existingSeries.id });
+    orRunning.push({ seriesReferenceId: existingSeries.id });
   }
 
   const running = await prisma.importJob.findFirst({
@@ -90,7 +90,7 @@ export async function runCatalogImport(params: {
             sourceUrl: normalizedUrl,
             status: ImportJobStatus.running,
             startedAt: new Date(),
-            catalogSeriesId: existingSeries?.id ?? null,
+            seriesReferenceId: existingSeries?.id ?? null,
           },
         });
 
@@ -121,29 +121,35 @@ export async function runCatalogImport(params: {
 
     const albumCount = result.albums.filter((a) => a.sourceAlbumId).length;
 
-    const catalogSeries = await prisma.$transaction(async (tx) => {
-      const upserted = await tx.catalogSeries.upsert({
+    const firstCover = result.albums.find((x) => x.coverImageUrl)?.coverImageUrl ?? null;
+
+    const seriesRef = await prisma.$transaction(async (tx) => {
+      const upserted = await tx.seriesReference.upsert({
         where: {
           source_sourceSeriesId: {
             source: params.source,
             sourceSeriesId: sourceSeriesKey,
           },
         },
-        create: toCatalogSeriesCreate(series, now, albumCount),
+        create: {
+          ...toSeriesReferenceCreate(series, now, albumCount),
+          coverImageUrl: firstCover,
+        },
         update: {
-          ...toCatalogSeriesUpdate(series, now, albumCount),
+          ...toSeriesReferenceUpdate(series, now, albumCount),
+          coverImageUrl: firstCover ?? undefined,
         },
       });
 
       for (const album of result.albums) {
         if (!album.sourceAlbumId) continue;
         try {
-          const { create, update } = toCatalogAlbumUpsert(upserted.id, album, now);
-          await tx.catalogAlbum.upsert({
+          const { create, update } = toAlbumReferenceUpsert(upserted.id, album, now);
+          await tx.albumReference.upsert({
             where: {
-              catalogSeriesId_sourceAlbumId: {
-                catalogSeriesId: upserted.id,
-                sourceAlbumId: album.sourceAlbumId,
+              seriesReferenceId_externalId: {
+                seriesReferenceId: upserted.id,
+                externalId: album.sourceAlbumId,
               },
             },
             create,
@@ -164,7 +170,7 @@ export async function runCatalogImport(params: {
         status:
           warnings.length > 0 ? ImportJobStatus.partial_success : ImportJobStatus.success,
         finishedAt: new Date(),
-        catalogSeriesId: catalogSeries.id,
+        seriesReferenceId: seriesRef.id,
         errorMessage: null,
       },
     });
@@ -173,13 +179,13 @@ export async function runCatalogImport(params: {
 
     scrapeLog.info("import catalogue OK", {
       jobId: job.id,
-      catalogSeriesId: catalogSeries.id,
+      seriesReferenceId: seriesRef.id,
       albums: albumCount,
     });
 
     return {
       jobId: job.id,
-      catalogSeriesId: catalogSeries.id,
+      seriesReferenceId: seriesRef.id,
       status:
         warnings.length > 0 ? ImportJobStatus.partial_success : ImportJobStatus.success,
       warnings,
@@ -199,7 +205,7 @@ export async function runCatalogImport(params: {
     scrapeLog.error("import catalogue échoué", e);
     return {
       jobId: job.id,
-      catalogSeriesId: existingSeries?.id ?? null,
+      seriesReferenceId: existingSeries?.id ?? null,
       status: ImportJobStatus.failed,
       warnings,
       errorMessage: message,

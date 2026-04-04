@@ -1,32 +1,31 @@
 import { prisma } from "@/lib/db/prisma";
-import { normalize } from "@/lib/domain/normalize";
-import type { SearchResult } from "@/lib/domain/types";
 
-export async function globalSearch(query: string): Promise<SearchResult> {
+export async function globalSearch(query: string) {
   if (!query || query.trim().length === 0) {
     return { albums: [], series: [] };
   }
 
-  const term = normalize(query);
+  const q = query.trim();
 
   const [albums, series] = await Promise.all([
-    prisma.album.findMany({
+    prisma.albumReference.findMany({
       where: {
         OR: [
-          { normalizedTitle: { contains: term } },
-          { normalizedAuthor: { contains: term } },
-          { normalizedPublisher: { contains: term } },
-          { series: { normalizedTitle: { contains: term } } },
+          { title: { contains: q, mode: "insensitive" } },
+          { authors: { contains: q, mode: "insensitive" } },
+          { publisher: { contains: q, mode: "insensitive" } },
+          { seriesReference: { title: { contains: q, mode: "insensitive" } } },
         ],
       },
-      include: { series: { select: { id: true, title: true } } },
+      include: { seriesReference: { select: { id: true, title: true } } },
       orderBy: { title: "asc" },
       take: 20,
     }),
-    prisma.series.findMany({
+    prisma.seriesReference.findMany({
       where: {
         OR: [
-          { normalizedTitle: { contains: term } },
+          { title: { contains: q, mode: "insensitive" } },
+          { slug: { contains: q, mode: "insensitive" } },
         ],
       },
       include: { _count: { select: { albums: true } } },

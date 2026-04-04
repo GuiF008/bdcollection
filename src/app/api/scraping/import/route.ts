@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db/prisma";
 import { isCacheStale } from "@/server/scraping/utils/dates";
 import { extractSourceSeriesIdFromSerieUrl } from "@/server/scraping/parsers/bedetheque-series.parser";
 import { runCatalogImport } from "@/server/scraping/services/import-series.service";
-import { getCatalogSeriesById, withStaleFlag } from "@/server/scraping/services/series-cache.service";
+import { getSeriesReferenceById, withStaleFlag } from "@/server/scraping/services/series-cache.service";
 import { normalizeSerieUrl } from "@/server/scraping/services/url-normalize";
 
 const bodySchema = z.object({
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const existing = await prisma.catalogSeries.findUnique({
+    const existing = await prisma.seriesReference.findUnique({
       where: {
         source_sourceSeriesId: {
           source: CatalogSource.bedetheque,
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (existing) {
-      const full = await getCatalogSeriesById(existing.id);
+      const full = await getSeriesReferenceById(existing.id);
       return NextResponse.json({
         fromCache: true,
         stale: isCacheStale(existing.cacheExpiresAt),
@@ -71,8 +71,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const full = result.catalogSeriesId
-      ? await getCatalogSeriesById(result.catalogSeriesId)
+    const full = result.seriesReferenceId
+      ? await getSeriesReferenceById(result.seriesReferenceId)
       : null;
 
     return NextResponse.json({
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
       warnings: result.warnings,
       series: full
         ? { ...withStaleFlag(full), albums: full.albums }
-        : { id: result.catalogSeriesId },
+        : { id: result.seriesReferenceId },
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Erreur serveur";

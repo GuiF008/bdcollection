@@ -1,20 +1,25 @@
 import { prisma } from "@/lib/db/prisma";
 import { isCacheStale } from "../utils/dates";
 
-export async function getCatalogSeriesById(id: string) {
-  return prisma.catalogSeries.findUnique({
+export async function getSeriesReferenceById(id: string) {
+  return prisma.seriesReference.findUnique({
     where: { id },
     include: {
-      albums: { orderBy: [{ volumeNumber: "asc" }, { volumeLabel: "asc" }, { title: "asc" }] },
+      albums: {
+        orderBy: [{ volumeNumber: "asc" }, { volumeLabel: "asc" }, { title: "asc" }],
+        include: {
+          collectionItems: true,
+        },
+      },
     },
   });
 }
 
-export async function searchCatalogSeries(query: string, take = 20) {
+export async function searchSeriesReferences(query: string, take = 20) {
   const q = query.trim();
   if (!q) return [];
 
-  return prisma.catalogSeries.findMany({
+  return prisma.seriesReference.findMany({
     where: {
       OR: [
         { title: { contains: q, mode: "insensitive" } },
