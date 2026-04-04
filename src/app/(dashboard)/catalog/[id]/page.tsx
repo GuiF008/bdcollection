@@ -5,9 +5,10 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import Badge from "@/components/ui/Badge";
-import CoverImage from "@/components/ui/CoverImage";
 import RefreshCatalogSeriesButton from "@/components/catalog/RefreshCatalogSeriesButton";
-import CatalogAlbumQuickActions from "@/components/catalog/CatalogAlbumQuickActions";
+import CatalogAlbumsClient, {
+  type CatalogAlbumRow,
+} from "@/components/catalog/CatalogAlbumsClient";
 import { getAlbumsForSeriesCatalog } from "@/lib/services/catalogReferences.service";
 import { getSeriesReferenceById } from "@/server/scraping/services/series-cache.service";
 import { isCacheStale } from "@/server/scraping/utils/dates";
@@ -21,6 +22,15 @@ export default async function CatalogSeriesDetailPage({ params }: Props) {
 
   const stale = isCacheStale(data.cacheExpiresAt);
   const albums = await getAlbumsForSeriesCatalog(id);
+
+  const albumRows: CatalogAlbumRow[] = albums.map((a) => ({
+    id: a.id,
+    title: a.title,
+    coverImageUrl: a.coverImageUrl,
+    volumeNumber: a.volumeNumber,
+    volumeLabel: a.volumeLabel,
+    flags: a.flags,
+  }));
 
   const ownedCount = albums.filter((a) => a.flags.owned).length;
   const eoOk = albums.filter((a) => a.flags.eoConfirmed).length;
@@ -70,62 +80,11 @@ export default async function CatalogSeriesDetailPage({ params }: Props) {
         <div className="px-5 py-4 border-b border-border">
           <h2 className="text-base font-semibold text-text-primary">Albums du catalogue ({albums.length})</h2>
           <p className="text-xs text-text-muted mt-1">
-            Utilisez les actions pour suivre ou marquer comme possédé — l’import ne signifie pas la possession.
+            L’import ne signifie pas la possession : ajoutez au suivi ici, puis précisez le statut dans Ma collection.
           </p>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-surface-alt/50 text-left text-text-muted">
-                <th className="px-4 py-3 font-medium w-14" />
-                <th className="px-4 py-3 font-medium">Tome</th>
-                <th className="px-4 py-3 font-medium">Titre</th>
-                <th className="px-4 py-3 font-medium hidden md:table-cell">Statut</th>
-                <th className="px-4 py-3 font-medium hidden lg:table-cell">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {albums.map((album) => (
-                <tr key={album.id} className="border-b border-border last:border-0 hover:bg-surface-alt/30">
-                  <td className="px-4 py-2">
-                    <CoverImage src={album.coverImageUrl} alt={album.title} size="sm" />
-                  </td>
-                  <td className="px-4 py-2 text-text-secondary whitespace-nowrap">
-                    {album.volumeNumber ?? album.volumeLabel ?? "—"}
-                  </td>
-                  <td className="px-4 py-2">
-                    <p className="font-medium text-text-primary">{album.title}</p>
-                    <p className="text-xs text-text-muted truncate max-w-[240px] md:hidden mt-1">
-                      {album.flags.owned && "Dans ma collection "}
-                      {album.flags.eoConfirmed && "EO "}
-                      {album.flags.wanted && "Recherché "}
-                    </p>
-                  </td>
-                  <td className="px-4 py-2 hidden md:table-cell">
-                    <div className="flex flex-wrap gap-1">
-                      <Badge variant="default">Catalogue</Badge>
-                      {album.flags.owned && <Badge variant="success">Collection</Badge>}
-                      {album.flags.eoConfirmed && <Badge variant="primary">EO</Badge>}
-                      {album.flags.eoToVerify && !album.flags.eoConfirmed && (
-                        <Badge variant="warning">EO à vérifier</Badge>
-                      )}
-                      {!album.flags.owned && !album.flags.wanted && (
-                        <Badge variant="warning">Manquant</Badge>
-                      )}
-                      {album.flags.wanted && <Badge variant="default">Recherché</Badge>}
-                      {album.flags.duplicate && <Badge variant="warning">Doublon</Badge>}
-                    </div>
-                  </td>
-                  <td className="px-4 py-2 hidden lg:table-cell align-top">
-                    <CatalogAlbumQuickActions
-                      albumReferenceId={album.id}
-                      hasOwned={album.flags.owned}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="p-4 sm:p-5">
+          <CatalogAlbumsClient seriesReferenceId={data.id} albums={albumRows} />
         </div>
       </div>
     </div>

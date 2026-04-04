@@ -238,6 +238,88 @@ export async function upsertCollectionItemOwned(albumReferenceId: string) {
   });
 }
 
+/** Crée une entrée de suivi (sans possession) si aucune ligne n’existe encore. */
+export async function ensureCollectionTracking(albumReferenceId: string) {
+  const existing = await prisma.collectionItem.findFirst({
+    where: { albumReferenceId },
+  });
+  if (existing) {
+    return prisma.collectionItem.findFirstOrThrow({
+      where: { id: existing.id },
+      include: {
+        albumReference: { include: { seriesReference: true } },
+      },
+    });
+  }
+  return prisma.collectionItem.create({
+    data: {
+      albumReferenceId,
+      ownershipStatus: OwnershipStatus.NOT_OWNED,
+      searchStatus: SearchStatus.NONE,
+    },
+    include: {
+      albumReference: { include: { seriesReference: true } },
+    },
+  });
+}
+
+export type CollectionSeriesSummary = {
+  id: string;
+  title: string;
+  coverImageUrl: string | null;
+  authors: string | null;
+  publisher: string | null;
+  itemCount: number;
+  ownedCount: number;
+};
+
+/** Séries ayant au moins un album suivi (toute ligne collection_items). */
+export async function getCollectionSeriesSummaries(): Promise<CollectionSeriesSummary[]> {
+  const items = await prisma.collectionItem.findMany({
+    include: {
+      albumReference: {
+        select: {
+          seriesReference: {
+            select: {
+              id: true,
+              title: true,
+              coverImageUrl: true,
+              authors: true,
+              publisher: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const map = new Map<
+    string,
+    CollectionSeriesSummary
+  >();
+
+  for (const it of items) {
+    const sr = it.albumReference.seriesReference;
+    const cur = map.get(sr.id);
+    if (!cur) {
+      map.set(sr.id, {
+        id: sr.id,
+        title: sr.title,
+        coverImageUrl: sr.coverImageUrl,
+        authors: sr.authors,
+        publisher: sr.publisher,
+        itemCount: 1,
+        ownedCount: it.ownershipStatus === OwnershipStatus.OWNED ? 1 : 0,
+      });
+    } else {
+      cur.itemCount += 1;
+      if (it.ownershipStatus === OwnershipStatus.OWNED) cur.ownedCount += 1;
+    }
+  }
+
+  return [...map.values()].sort((a, b) => a.title.localeCompare(b.title, "fr"));
+}
+
 export async function markAlbumWanted(albumReferenceId: string) {
   const existing = await prisma.collectionItem.findFirst({
     where: { albumReferenceId },
@@ -334,6 +416,8 @@ export type DashboardV2Stats = {
     confirmedEo: number;
     missing: number;
   }>;
+  /** Séries avec au moins un album suivi (aperçu dashboard). */
+  collectionSeriesPreview: CollectionSeriesSummary[];
 };
 
 export async function getDashboardV2Stats(): Promise<DashboardV2Stats> {
@@ -407,6 +491,8 @@ export async function getDashboardV2Stats(): Promise<DashboardV2Stats> {
     };
   });
 
+  const collectionSeriesPreview = (await getCollectionSeriesSummaries()).slice(0, 12);
+
   return {
     seriesImported,
     albumsReferenced,
@@ -415,5 +501,6 @@ export async function getDashboardV2Stats(): Promise<DashboardV2Stats> {
     missingOwned,
     duplicateCount: duplicateRows,
     seriesProgress,
+    collectionSeriesPreview,
   };
 }

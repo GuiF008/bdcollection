@@ -8,6 +8,8 @@ interface KpiCardProps {
   color?: "primary" | "secondary" | "accent" | "success";
   /** Si défini, toute la carte est cliquable */
   href?: string;
+  /** Variante plus grande pour le tableau de bord */
+  size?: "default" | "lg";
 }
 
 const colorMap = {
@@ -23,23 +25,28 @@ export default function KpiCard({
   icon: Icon,
   color = "primary",
   href,
+  size = "default",
 }: KpiCardProps) {
+  const isLg = size === "lg";
   const inner = (
     <>
       <div
-        className={`flex h-12 w-12 items-center justify-center rounded-lg ${colorMap[color]}`}
+        className={`flex items-center justify-center rounded-xl ${colorMap[color]} ${
+          isLg ? "h-14 w-14" : "h-12 w-12 rounded-lg"
+        }`}
       >
-        <Icon className="h-6 w-6" />
+        <Icon className={isLg ? "h-7 w-7" : "h-6 w-6"} />
       </div>
       <div>
-        <p className="text-sm text-text-secondary">{title}</p>
-        <p className="text-2xl font-bold text-text-primary">{value}</p>
+        <p className={`text-text-secondary ${isLg ? "text-sm" : "text-sm"}`}>{title}</p>
+        <p className={`font-bold text-text-primary ${isLg ? "text-3xl mt-1" : "text-2xl"}`}>{value}</p>
       </div>
     </>
   );
 
-  const shellClass =
-    "bg-white rounded-xl border border-border p-5 flex items-center gap-4 transition-[box-shadow,border-color]";
+  const shellClass = `bg-white rounded-xl border border-border flex items-center gap-4 transition-[box-shadow,border-color] ${
+    isLg ? "p-6 min-h-[104px]" : "p-5"
+  }`;
 
   if (href) {
     return (

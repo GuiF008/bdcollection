@@ -4,30 +4,32 @@ import Link from "next/link";
 import { BookOpen } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
-import CollectionListClient from "@/components/collection/CollectionListClient";
-import { getCollectionItemsWithRefs } from "@/lib/services/collectionItems.service";
-import { prisma } from "@/lib/db/prisma";
+import CollectionSeriesHubClient from "@/components/collection/CollectionSeriesHubClient";
+import { getCollectionSeriesSummaries } from "@/lib/services/collectionItems.service";
 
 type SearchParams = Promise<{ dup?: string; eo?: string }>;
 
 export default async function CollectionPage({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
-  const [items, seriesOptions] = await Promise.all([
-    getCollectionItemsWithRefs({
-      sortField: "createdAt",
-      sortOrder: "desc",
-    }),
-    prisma.seriesReference.findMany({
-      select: { id: true, title: true },
-      orderBy: { title: "asc" },
-    }),
-  ]);
+  const summaries = await getCollectionSeriesSummaries();
 
   return (
     <div>
+      {sp.eo === "1" && (
+        <div className="mb-4 rounded-lg border border-accent/30 bg-accent/5 px-4 py-3 text-sm text-text-secondary">
+          Filtre <strong className="text-text-primary">EO</strong> : ouvrez une série, puis cochez « Première
+          édition » dans les filtres.
+        </div>
+      )}
+      {sp.dup === "1" && (
+        <div className="mb-4 rounded-lg border border-warning/30 bg-warning/5 px-4 py-3 text-sm text-text-secondary">
+          Filtre <strong className="text-text-primary">Doublons</strong> : ouvrez une série, puis activez le
+          filtre « Doublons ».
+        </div>
+      )}
       <PageHeader
         title="Ma collection"
-        description="Regroupée par série : résumé et métadonnées de la série, puis vos albums. Cochez plusieurs tomes pour une action groupée."
+        description="Par série : ouvrez une série pour lister les albums suivis et les actions groupées. Le statut détaillé se règle ici après ajout depuis le catalogue."
         actions={
           <Link
             href="/import-export"
@@ -38,21 +40,16 @@ export default async function CollectionPage({ searchParams }: { searchParams: S
         }
       />
 
-      {items.length === 0 ? (
+      {summaries.length === 0 ? (
         <EmptyState
           icon={BookOpen}
           title="Collection vide"
-          description="Ajoutez des albums depuis le catalogue importé, ou importez un fichier CSV / JSON."
+          description="Ajoutez des albums depuis le catalogue importé (suivi), ou importez un fichier CSV / JSON."
           actionLabel="Voir le catalogue"
           actionHref="/catalog"
         />
       ) : (
-        <CollectionListClient
-          items={items}
-          seriesOptions={seriesOptions}
-          initialDupOnly={sp.dup === "1"}
-          initialEoOnly={sp.eo === "1"}
-        />
+        <CollectionSeriesHubClient summaries={summaries} />
       )}
     </div>
   );

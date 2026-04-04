@@ -69,9 +69,10 @@ export async function getAlbumsForSeriesCatalog(seriesReferenceId: string) {
       (c) => c.isDuplicate || c.ownershipStatus === OwnershipStatus.DUPLICATE
     );
     const primaryItem = al.collectionItems[0] ?? null;
+    const tracked = al.collectionItems.length > 0;
     return {
       ...al,
-      flags: { owned, wanted, eoConfirmed, eoToVerify, duplicate },
+      flags: { owned, wanted, tracked, eoConfirmed, eoToVerify, duplicate },
       primaryItem,
     };
   });

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import {
+  ensureCollectionTracking,
   markAlbumWanted,
   markHunting,
   removeCollectionItem,
@@ -17,31 +18,38 @@ import {
   SearchStatus,
 } from "@/generated/prisma/enums";
 
+export async function addToTrackingAlbumAction(albumReferenceId: string) {
+  await ensureCollectionTracking(albumReferenceId);
+  revalidatePath("/catalog", "layout");
+  revalidatePath("/collection", "layout");
+  revalidatePath(`/albums/${albumReferenceId}`);
+}
+
 export async function addOwnedAlbumAction(albumReferenceId: string) {
   await upsertCollectionItemOwned(albumReferenceId);
-  revalidatePath("/catalog");
-  revalidatePath("/collection");
+  revalidatePath("/catalog", "layout");
+  revalidatePath("/collection", "layout");
   revalidatePath(`/albums/${albumReferenceId}`);
 }
 
 export async function markWantedAlbumAction(albumReferenceId: string) {
   await markAlbumWanted(albumReferenceId);
-  revalidatePath("/catalog");
-  revalidatePath("/collection");
+  revalidatePath("/catalog", "layout");
+  revalidatePath("/collection", "layout");
   revalidatePath(`/albums/${albumReferenceId}`);
 }
 
 export async function markHuntingAlbumAction(albumReferenceId: string) {
   await markHunting(albumReferenceId);
-  revalidatePath("/catalog");
-  revalidatePath("/collection");
+  revalidatePath("/catalog", "layout");
+  revalidatePath("/collection", "layout");
   revalidatePath(`/albums/${albumReferenceId}`);
 }
 
 export async function removeFromCollectionAction(collectionItemId: string, albumReferenceId: string) {
   await removeCollectionItem(collectionItemId);
-  revalidatePath("/catalog");
-  revalidatePath("/collection");
+  revalidatePath("/catalog", "layout");
+  revalidatePath("/collection", "layout");
   revalidatePath(`/albums/${albumReferenceId}`);
 }
 
@@ -73,8 +81,8 @@ export async function updateCollectionItemAction(
     patch.purchaseDate = new Date(pd);
   }
   await updateCollectionItem(collectionItemId, patch);
-  revalidatePath("/catalog");
-  revalidatePath("/collection");
+  revalidatePath("/catalog", "layout");
+  revalidatePath("/collection", "layout");
   revalidatePath(`/albums/${albumReferenceId}`);
   revalidatePath("/");
 }

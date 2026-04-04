@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import {
+  ensureCollectionTracking,
   markAlbumWanted,
   markHunting,
   upsertCollectionItemOwned,
@@ -41,9 +42,9 @@ export async function updateAlbumReferenceAction(albumReferenceId: string, raw: 
   }
 
   await updateAlbumReferenceById(albumReferenceId, data);
-  revalidatePath("/collection");
+  revalidatePath("/collection", "layout");
   revalidatePath(`/albums/${albumReferenceId}`);
-  revalidatePath("/catalog");
+  revalidatePath("/catalog", "layout");
   revalidatePath("/");
   return { ok: true as const };
 }
@@ -63,14 +64,14 @@ export async function updateSeriesReferenceAction(seriesReferenceId: string, raw
   }
 
   await updateSeriesReferenceById(seriesReferenceId, data);
-  revalidatePath("/collection");
+  revalidatePath("/collection", "layout");
   revalidatePath(`/catalog/${seriesReferenceId}`);
-  revalidatePath("/catalog");
+  revalidatePath("/catalog", "layout");
   revalidatePath("/");
   return { ok: true as const };
 }
 
-export type BulkCollectionMode = "owned" | "wanted" | "hunting";
+export type BulkCollectionMode = "owned" | "wanted" | "hunting" | "tracking";
 
 export async function bulkCollectionStatusAction(
   albumReferenceIds: string[],
@@ -82,7 +83,9 @@ export async function bulkCollectionStatusAction(
   }
 
   for (const id of ids) {
-    if (mode === "owned") {
+    if (mode === "tracking") {
+      await ensureCollectionTracking(id);
+    } else if (mode === "owned") {
       await upsertCollectionItemOwned(id);
     } else if (mode === "wanted") {
       await markAlbumWanted(id);
@@ -91,8 +94,8 @@ export async function bulkCollectionStatusAction(
     }
   }
 
-  revalidatePath("/collection");
-  revalidatePath("/catalog");
+  revalidatePath("/collection", "layout");
+  revalidatePath("/catalog", "layout");
   revalidatePath("/");
   return { ok: true as const, count: ids.length };
 }
