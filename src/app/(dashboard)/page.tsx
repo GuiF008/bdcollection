@@ -3,14 +3,17 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { BookOpen, Library, Star, Target, Copy, AlertCircle, Layers } from "lucide-react";
 import { getDashboardV2Stats } from "@/lib/services/collectionItems.service";
-import { listCollectionGroups } from "@/lib/services/collectionGroups.service";
+import { listCollectionGroupsForDashboard } from "@/lib/services/collectionGroups.service";
 import KpiCard from "@/components/ui/KpiCard";
 import CoverImage from "@/components/ui/CoverImage";
 import DashboardCollectionPreviewClient from "@/components/dashboard/DashboardCollectionPreviewClient";
 import DashboardGroupsSection from "@/components/dashboard/DashboardGroupsSection";
 
 export default async function DashboardPage() {
-  const [stats, groups] = await Promise.all([getDashboardV2Stats(), listCollectionGroups()]);
+  const [stats, groups] = await Promise.all([
+    getDashboardV2Stats(),
+    listCollectionGroupsForDashboard(),
+  ]);
 
   return (
     <div>

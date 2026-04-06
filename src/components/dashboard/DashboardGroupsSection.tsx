@@ -1,25 +1,35 @@
 import Link from "next/link";
-import Image from "next/image";
 import { ChevronRight, FolderKanban } from "lucide-react";
+import CoverImage from "@/components/ui/CoverImage";
+import type { CollectionGroupDashboardRow } from "@/lib/services/collectionGroups.service";
 
-export type DashboardGroupRow = {
-  id: string;
-  name: string;
-  _count: { memberships: number };
-};
+export type DashboardGroupRow = CollectionGroupDashboardRow;
+
+function firstAvailableCover(groups: DashboardGroupRow[]): {
+  url: string | null;
+  title: string;
+} {
+  for (const g of groups) {
+    if (g.previewCoverUrl) {
+      return { url: g.previewCoverUrl, title: g.previewSeriesTitle ?? g.name };
+    }
+  }
+  return { url: null, title: "Groupes de séries" };
+}
 
 export default function DashboardGroupsSection({ groups }: { groups: DashboardGroupRow[] }) {
+  const hero = firstAvailableCover(groups);
+
   return (
     <section className="mb-10 rounded-2xl border border-border bg-white overflow-hidden shadow-sm">
       <div className="grid lg:grid-cols-[minmax(260px,340px)_1fr] gap-0">
         <div className="relative flex flex-col items-center lg:items-start text-center lg:text-left p-8 lg:p-10 bg-gradient-to-br from-primary/[0.07] via-white to-secondary/[0.08] border-b lg:border-b-0 lg:border-r border-border">
-          <div className="relative w-full max-w-[260px] aspect-[400/280] mb-5">
-            <Image
-              src="/images/collection-groups-illustration.svg"
-              alt="Illustration : albums regroupés par thème"
-              fill
-              className="object-contain object-center"
-              priority={false}
+          <div className="mb-5 flex justify-center lg:justify-start w-full">
+            <CoverImage
+              src={hero.url}
+              alt={hero.title ? `Couverture : ${hero.title}` : "Aperçu groupe"}
+              size="lg"
+              className="shadow-md"
             />
           </div>
           <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2 justify-center lg:justify-start">
@@ -62,23 +72,34 @@ export default function DashboardGroupsSection({ groups }: { groups: DashboardGr
                   <li key={g.id}>
                     <Link
                       href={`/collection?group=${encodeURIComponent(g.id)}`}
-                      className="group flex flex-col h-full rounded-xl border border-border bg-surface-alt/40 p-5 hover:border-primary/35 hover:bg-white hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                      className="group flex flex-col h-full rounded-xl border border-border bg-surface-alt/40 overflow-hidden hover:border-primary/35 hover:bg-white hover:shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                          <FolderKanban className="h-5 w-5" />
-                        </div>
-                        <ChevronRight className="h-5 w-5 text-text-muted group-hover:text-primary transition-colors shrink-0 mt-1" />
+                      <div className="flex justify-center pt-5 px-5 pb-2 bg-surface-alt/60 group-hover:bg-surface-alt/40 transition-colors">
+                        <CoverImage
+                          src={g.previewCoverUrl}
+                          alt={
+                            g.previewSeriesTitle
+                              ? `Première série du groupe : ${g.previewSeriesTitle}`
+                              : `Groupe ${g.name}`
+                          }
+                          size="md"
+                          className="shadow-sm"
+                        />
                       </div>
-                      <p className="mt-4 font-semibold text-text-primary line-clamp-2 group-hover:text-primary transition-colors">
-                        {g.name}
-                      </p>
-                      <p className="mt-1 text-sm text-text-muted">
-                        {g._count.memberships} série{g._count.memberships > 1 ? "s" : ""}
-                      </p>
-                      <span className="mt-auto pt-4 text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                        Voir dans Ma collection
-                      </span>
+                      <div className="px-5 pb-5 pt-4 flex flex-col flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="font-semibold text-text-primary line-clamp-2 group-hover:text-primary transition-colors min-w-0">
+                            {g.name}
+                          </p>
+                          <ChevronRight className="h-5 w-5 text-text-muted group-hover:text-primary transition-colors shrink-0 mt-0.5" />
+                        </div>
+                        <p className="mt-1 text-sm text-text-muted">
+                          {g._count.memberships} série{g._count.memberships > 1 ? "s" : ""}
+                        </p>
+                        <span className="mt-auto pt-3 text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                          Voir dans Ma collection
+                        </span>
+                      </div>
                     </Link>
                   </li>
                 ))}

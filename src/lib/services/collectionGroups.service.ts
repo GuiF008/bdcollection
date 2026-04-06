@@ -7,6 +7,45 @@ export async function listCollectionGroups() {
   });
 }
 
+export type CollectionGroupDashboardRow = {
+  id: string;
+  name: string;
+  _count: { memberships: number };
+  /** Première série du groupe (ordre titre), pour vignette */
+  previewCoverUrl: string | null;
+  previewSeriesTitle: string | null;
+};
+
+/** Groupes avec couverture de la première série (alphabetique titre) pour le dashboard. */
+export async function listCollectionGroupsForDashboard(): Promise<CollectionGroupDashboardRow[]> {
+  const groups = await prisma.collectionGroup.findMany({
+    orderBy: { name: "asc" },
+    include: {
+      _count: { select: { memberships: true } },
+      memberships: {
+        take: 1,
+        orderBy: { seriesReference: { title: "asc" } },
+        select: {
+          seriesReference: {
+            select: { title: true, coverImageUrl: true },
+          },
+        },
+      },
+    },
+  });
+
+  return groups.map((g) => {
+    const sr = g.memberships[0]?.seriesReference;
+    return {
+      id: g.id,
+      name: g.name,
+      _count: g._count,
+      previewCoverUrl: sr?.coverImageUrl ?? null,
+      previewSeriesTitle: sr?.title ?? null,
+    };
+  });
+}
+
 export async function createCollectionGroup(name: string) {
   const n = name.trim();
   if (!n) throw new Error("Nom vide");
