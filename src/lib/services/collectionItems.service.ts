@@ -271,37 +271,69 @@ export type CollectionSeriesSummary = {
   publisher: string | null;
   itemCount: number;
   ownedCount: number;
+  /** Albums dans le catalogue importé pour cette série */
+  catalogAlbumCount: number;
+  /** Possédés / albums catalogue (0–100) */
+  ownershipProgressPercent: number;
+  groupIds: string[];
+};
+
+export type GetCollectionSeriesSummariesOpts = {
+  groupId?: string;
 };
 
 /** Séries ayant au moins un album suivi (toute ligne collection_items). */
-export async function getCollectionSeriesSummaries(): Promise<CollectionSeriesSummary[]> {
-  const items = await prisma.collectionItem.findMany({
-    include: {
-      albumReference: {
-        select: {
-          seriesReference: {
-            select: {
-              id: true,
-              title: true,
-              coverImageUrl: true,
-              authors: true,
-              publisher: true,
+export async function getCollectionSeriesSummaries(
+  opts?: GetCollectionSeriesSummariesOpts
+): Promise<CollectionSeriesSummary[]> {
+  const [items, albumCounts, memberships] = await Promise.all([
+    prisma.collectionItem.findMany({
+      include: {
+        albumReference: {
+          select: {
+            seriesReference: {
+              select: {
+                id: true,
+                title: true,
+                coverImageUrl: true,
+                authors: true,
+                publisher: true,
+              },
             },
           },
         },
       },
-    },
-  });
+    }),
+    prisma.albumReference.groupBy({
+      by: ["seriesReferenceId"],
+      _count: { _all: true },
+    }),
+    prisma.seriesGroupMembership.findMany({
+      select: { seriesReferenceId: true, collectionGroupId: true },
+    }),
+  ]);
 
-  const map = new Map<
-    string,
-    CollectionSeriesSummary
-  >();
+  const albumCountBySeries = new Map(
+    albumCounts.map((r) => [r.seriesReferenceId, r._count._all])
+  );
+
+  const groupsBySeries = new Map<string, string[]>();
+  for (const m of memberships) {
+    const cur = groupsBySeries.get(m.seriesReferenceId) ?? [];
+    cur.push(m.collectionGroupId);
+    groupsBySeries.set(m.seriesReferenceId, cur);
+  }
+
+  const map = new Map<string, CollectionSeriesSummary>();
 
   for (const it of items) {
     const sr = it.albumReference.seriesReference;
     const cur = map.get(sr.id);
+    const catalogAlbumCount = albumCountBySeries.get(sr.id) ?? 0;
+    const groupIds = groupsBySeries.get(sr.id) ?? [];
+
     if (!cur) {
+      const ownedCount = it.ownershipStatus === OwnershipStatus.OWNED ? 1 : 0;
       map.set(sr.id, {
         id: sr.id,
         title: sr.title,
@@ -309,15 +341,65 @@ export async function getCollectionSeriesSummaries(): Promise<CollectionSeriesSu
         authors: sr.authors,
         publisher: sr.publisher,
         itemCount: 1,
-        ownedCount: it.ownershipStatus === OwnershipStatus.OWNED ? 1 : 0,
+        ownedCount,
+        catalogAlbumCount,
+        ownershipProgressPercent:
+          catalogAlbumCount > 0 ? Math.min(100, Math.round((ownedCount / catalogAlbumCount) * 100)) : 0,
+        groupIds: [...groupIds],
       });
     } else {
       cur.itemCount += 1;
       if (it.ownershipStatus === OwnershipStatus.OWNED) cur.ownedCount += 1;
+      cur.ownershipProgressPercent =
+        cur.catalogAlbumCount > 0
+          ? Math.min(100, Math.round((cur.ownedCount / cur.catalogAlbumCount) * 100))
+          : 0;
     }
   }
 
-  return [...map.values()].sort((a, b) => a.title.localeCompare(b.title, "fr"));
+  let list = [...map.values()].sort((a, b) => a.title.localeCompare(b.title, "fr"));
+
+  const filterGroupId = opts?.groupId;
+  if (filterGroupId) {
+    list = list.filter((s) => s.groupIds.includes(filterGroupId));
+  }
+
+  return list;
+}
+
+export type BulkCollectionItemPatch = {
+  ownershipStatus?: OwnershipStatus;
+  searchStatus?: SearchStatus;
+  editionStatus?: EditionStatus;
+  editionConfidence?: EditionConfidence;
+  conditionGrade?: ConditionGrade;
+  completenessStatus?: CompletenessStatus;
+  isDuplicate?: boolean;
+  hasPersonalPhoto?: boolean;
+};
+
+/** Met à jour les exemplaires liés aux albums du catalogue, limité à une série. */
+export async function bulkPatchCollectionItemsForAlbumsInSeries(
+  seriesReferenceId: string,
+  albumReferenceIds: string[],
+  patch: BulkCollectionItemPatch
+) {
+  const uniq = [...new Set(albumReferenceIds)].filter(Boolean);
+  const data = Object.fromEntries(
+    Object.entries(patch).filter(([, v]) => v !== undefined)
+  ) as Prisma.CollectionItemUpdateManyMutationInput;
+  if (uniq.length === 0 || Object.keys(data).length === 0) {
+    return { count: 0 };
+  }
+
+  const result = await prisma.collectionItem.updateMany({
+    where: {
+      albumReferenceId: { in: uniq },
+      albumReference: { seriesReferenceId },
+    },
+    data,
+  });
+  return { count: result.count };
 }
 
 export async function markAlbumWanted(albumReferenceId: string) {

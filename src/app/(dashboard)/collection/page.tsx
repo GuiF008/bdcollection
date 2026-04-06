@@ -6,12 +6,17 @@ import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
 import CollectionSeriesHubClient from "@/components/collection/CollectionSeriesHubClient";
 import { getCollectionSeriesSummaries } from "@/lib/services/collectionItems.service";
+import { listCollectionGroups } from "@/lib/services/collectionGroups.service";
 
-type SearchParams = Promise<{ dup?: string; eo?: string }>;
+type SearchParams = Promise<{ dup?: string; eo?: string; group?: string }>;
 
 export default async function CollectionPage({ searchParams }: { searchParams: SearchParams }) {
   const sp = await searchParams;
-  const summaries = await getCollectionSeriesSummaries();
+  const groupId = typeof sp.group === "string" && sp.group.trim() ? sp.group.trim() : undefined;
+  const [summaries, groups] = await Promise.all([
+    getCollectionSeriesSummaries(groupId ? { groupId } : undefined),
+    listCollectionGroups(),
+  ]);
 
   return (
     <div>
@@ -31,12 +36,20 @@ export default async function CollectionPage({ searchParams }: { searchParams: S
         title="Ma collection"
         description="Par série : ouvrez une série pour lister les albums suivis et les actions groupées. Le statut détaillé se règle ici après ajout depuis le catalogue."
         actions={
-          <Link
-            href="/import-export"
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium text-text-secondary hover:bg-surface-alt"
-          >
-            Importer (CSV / JSON)
-          </Link>
+          <>
+            <Link
+              href="/collection/groups"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium text-text-secondary hover:bg-surface-alt"
+            >
+              Groupes
+            </Link>
+            <Link
+              href="/import-export"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border text-sm font-medium text-text-secondary hover:bg-surface-alt"
+            >
+              Importer (CSV / JSON)
+            </Link>
+          </>
         }
       />
 
@@ -49,7 +62,11 @@ export default async function CollectionPage({ searchParams }: { searchParams: S
           actionHref="/catalog"
         />
       ) : (
-        <CollectionSeriesHubClient summaries={summaries} />
+        <CollectionSeriesHubClient
+          summaries={summaries}
+          groups={groups.map((g) => ({ id: g.id, name: g.name }))}
+          activeGroupId={groupId ?? null}
+        />
       )}
     </div>
   );

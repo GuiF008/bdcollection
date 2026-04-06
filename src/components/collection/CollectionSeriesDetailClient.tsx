@@ -9,6 +9,7 @@ import CoverImage from "@/components/ui/CoverImage";
 import Badge from "@/components/ui/Badge";
 import type { CollectionItemWithRef, SeriesRefForCollection } from "@/lib/domain/types";
 import SeriesReferenceInlineEdit from "@/components/collection/SeriesReferenceInlineEdit";
+import BulkCollectionCriteriaForm from "@/components/collection/BulkCollectionCriteriaForm";
 import { bulkCollectionStatusAction, type BulkCollectionMode } from "@/app/actions/references";
 
 const STORAGE_KEY = "bdcollection:collectionAlbumView";
@@ -52,6 +53,8 @@ export default function CollectionSeriesDetailClient({
   const [search, setSearch] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   const [eoOnly, setEoOnly] = useState(initialEoOnly);
+  const [secondEdOnly, setSecondEdOnly] = useState(false);
+  const [thirdEdOnly, setThirdEdOnly] = useState(false);
   const [toVerify, setToVerify] = useState(false);
   const [dupOnly, setDupOnly] = useState(initialDupOnly);
   const [huntOnly, setHuntOnly] = useState(false);
@@ -101,6 +104,12 @@ export default function CollectionSeriesDetailClient({
     if (eoOnly) {
       r = r.filter((it) => it.editionStatus === "FIRST_EDITION");
     }
+    if (secondEdOnly) {
+      r = r.filter((it) => it.editionStatus === "SECOND_EDITION");
+    }
+    if (thirdEdOnly) {
+      r = r.filter((it) => it.editionStatus === "THIRD_EDITION");
+    }
     if (toVerify) {
       r = r.filter(
         (it) => it.editionConfidence === "TO_VERIFY" || it.editionConfidence === "PROBABLE"
@@ -122,7 +131,7 @@ export default function CollectionSeriesDetailClient({
       if (va !== vb) return va - vb;
       return a.albumReference.title.localeCompare(b.albumReference.title, "fr");
     });
-  }, [items, ownedOnly, search, eoOnly, toVerify, dupOnly, huntOnly]);
+  }, [items, ownedOnly, search, eoOnly, secondEdOnly, thirdEdOnly, toVerify, dupOnly, huntOnly]);
 
   const authorsLine = displaySeriesAuthors(series, items);
   const publisherLine = displaySeriesPublisher(series, items);
@@ -169,6 +178,11 @@ export default function CollectionSeriesDetailClient({
         {it.ownershipStatus === "WANTED" && <Badge variant="default">Recherché</Badge>}
         {it.ownershipStatus === "HUNTING" && <Badge variant="warning">À chasser</Badge>}
         {it.editionStatus === "FIRST_EDITION" && <Badge variant="primary">Première édition</Badge>}
+        {it.editionStatus === "SECOND_EDITION" && <Badge variant="primary">2e édition</Badge>}
+        {it.editionStatus === "THIRD_EDITION" && <Badge variant="primary">3e édition</Badge>}
+        {it.editionStatus === "NOT_FIRST_EDITION" && (
+          <Badge variant="default">Pas la 1re édition</Badge>
+        )}
         {(it.editionConfidence === "TO_VERIFY" || it.editionConfidence === "PROBABLE") && (
           <Badge variant="warning">À vérifier</Badge>
         )}
@@ -300,6 +314,22 @@ export default function CollectionSeriesDetailClient({
               Première édition
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={secondEdOnly}
+                onChange={(e) => setSecondEdOnly(e.target.checked)}
+              />
+              2e édition
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={thirdEdOnly}
+                onChange={(e) => setThirdEdOnly(e.target.checked)}
+              />
+              3e édition
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={toVerify} onChange={(e) => setToVerify(e.target.checked)} />
               EO à vérifier
             </label>
@@ -316,43 +346,51 @@ export default function CollectionSeriesDetailClient({
       )}
 
       {selected.size > 0 && (
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-xl border border-primary/25 bg-primary/5">
-          <p className="text-sm font-medium text-text-primary">
-            {selected.size} album{selected.size > 1 ? "s" : ""} sélectionné{selected.size > 1 ? "s" : ""}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              disabled={bulkPending}
-              onClick={() => runBulk("owned")}
-              className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium disabled:opacity-50"
-            >
-              Dans ma collection
-            </button>
-            <button
-              type="button"
-              disabled={bulkPending}
-              onClick={() => runBulk("wanted")}
-              className="px-3 py-1.5 rounded-lg border border-border bg-white text-xs font-medium disabled:opacity-50"
-            >
-              Recherché
-            </button>
-            <button
-              type="button"
-              disabled={bulkPending}
-              onClick={() => runBulk("hunting")}
-              className="px-3 py-1.5 rounded-lg border border-border bg-white text-xs font-medium disabled:opacity-50"
-            >
-              À chasser
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelected(new Set())}
-              className="px-3 py-1.5 rounded-lg text-xs text-text-muted hover:text-text-primary"
-            >
-              Tout désélectionner
-            </button>
+        <div className="mb-6 p-4 rounded-xl border border-primary/25 bg-primary/5 space-y-1">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <p className="text-sm font-medium text-text-primary">
+              {selected.size} album{selected.size > 1 ? "s" : ""} sélectionné{selected.size > 1 ? "s" : ""}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={bulkPending}
+                onClick={() => runBulk("owned")}
+                className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium disabled:opacity-50"
+              >
+                Dans ma collection
+              </button>
+              <button
+                type="button"
+                disabled={bulkPending}
+                onClick={() => runBulk("wanted")}
+                className="px-3 py-1.5 rounded-lg border border-border bg-white text-xs font-medium disabled:opacity-50"
+              >
+                Recherché
+              </button>
+              <button
+                type="button"
+                disabled={bulkPending}
+                onClick={() => runBulk("hunting")}
+                className="px-3 py-1.5 rounded-lg border border-border bg-white text-xs font-medium disabled:opacity-50"
+              >
+                À chasser
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelected(new Set())}
+                className="px-3 py-1.5 rounded-lg text-xs text-text-muted hover:text-text-primary"
+              >
+                Tout désélectionner
+              </button>
+            </div>
           </div>
+          <BulkCollectionCriteriaForm
+            seriesReferenceId={series.id}
+            albumReferenceIds={Array.from(selected)}
+            disabled={bulkPending}
+            onApplied={() => setSelected(new Set())}
+          />
         </div>
       )}
 

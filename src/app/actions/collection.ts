@@ -2,10 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import {
+  bulkPatchCollectionItemsForAlbumsInSeries,
   ensureCollectionTracking,
   markAlbumWanted,
   markHunting,
   removeCollectionItem,
+  type BulkCollectionItemPatch,
   updateCollectionItem,
   upsertCollectionItemOwned,
 } from "@/lib/services/collectionItems.service";
@@ -85,4 +87,37 @@ export async function updateCollectionItemAction(
   revalidatePath("/collection", "layout");
   revalidatePath(`/albums/${albumReferenceId}`);
   revalidatePath("/");
+}
+
+export async function bulkPatchCollectionItemsAction(
+  seriesReferenceId: string,
+  albumReferenceIds: string[],
+  patch: BulkCollectionItemPatch
+) {
+  if (!albumReferenceIds?.length) {
+    return { ok: false as const, error: "Aucun album sélectionné." };
+  }
+  const hasPatch = Object.values(patch).some((v) => v !== undefined);
+  if (!hasPatch) {
+    return { ok: false as const, error: "Choisissez au moins un critère à appliquer." };
+  }
+  const { count } = await bulkPatchCollectionItemsForAlbumsInSeries(
+    seriesReferenceId,
+    albumReferenceIds,
+    patch
+  );
+  if (count === 0) {
+    return {
+      ok: false as const,
+      error: "Aucune ligne mise à jour (série ou sélection invalide).",
+    };
+  }
+  revalidatePath("/catalog", "layout");
+  revalidatePath("/collection", "layout");
+  revalidatePath(`/collection/${seriesReferenceId}`);
+  for (const id of albumReferenceIds) {
+    revalidatePath(`/albums/${id}`);
+  }
+  revalidatePath("/");
+  return { ok: true as const, count };
 }

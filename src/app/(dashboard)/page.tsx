@@ -108,6 +108,19 @@ export default async function DashboardPage() {
                       </>
                     )}
                   </p>
+                  {s.catalogAlbumCount > 0 && (
+                    <div className="mt-2">
+                      <div className="h-1.5 rounded-full bg-surface-alt overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-primary"
+                          style={{ width: `${s.ownershipProgressPercent}%` }}
+                        />
+                      </div>
+                      <p className="text-[10px] text-text-muted mt-1 tabular-nums">
+                        {s.ownedCount}/{s.catalogAlbumCount} catalogue · {s.ownershipProgressPercent}%
+                      </p>
+                    </div>
+                  )}
                 </div>
               </Link>
             ))}

@@ -1,5 +1,22 @@
 import { prisma } from "@/lib/db/prisma";
-import { OwnershipStatus } from "@/generated/prisma/enums";
+import { EditionStatus, OwnershipStatus } from "@/generated/prisma/enums";
+
+function editionExportLabel(s: EditionStatus): string {
+  switch (s) {
+    case EditionStatus.UNKNOWN:
+      return "Inconnu";
+    case EditionStatus.FIRST_EDITION:
+      return "Première édition";
+    case EditionStatus.SECOND_EDITION:
+      return "Deuxième édition";
+    case EditionStatus.THIRD_EDITION:
+      return "Troisième édition";
+    case EditionStatus.NOT_FIRST_EDITION:
+      return "Pas la première";
+    default:
+      return String(s);
+  }
+}
 
 export async function exportAlbumsJSON() {
   const items = await prisma.collectionItem.findMany({
@@ -29,7 +46,8 @@ export async function exportAlbumsJSON() {
       dateParution: a.publicationDate?.toISOString().split("T")[0] || null,
       tome: a.volumeNumber,
       resume: a.summary,
-      editionOriginale: row.editionStatus === "FIRST_EDITION",
+      editionOriginale: row.editionStatus === EditionStatus.FIRST_EDITION,
+      editionDetail: editionExportLabel(row.editionStatus),
       notesPerso: row.notes,
       isbn: a.isbn,
       ean: meta.ean ?? null,
@@ -49,6 +67,7 @@ export async function exportAlbumsCSV(): Promise<string> {
     "Tome",
     "Resume",
     "Edition originale",
+    "Edition (detail)",
     "Notes",
     "ISBN",
     "EAN",
@@ -63,6 +82,7 @@ export async function exportAlbumsCSV(): Promise<string> {
     album.tome?.toString() || "",
     escapeCsv(album.resume || ""),
     album.editionOriginale ? "Oui" : "Non",
+    escapeCsv(album.editionDetail),
     escapeCsv(album.notesPerso || ""),
     album.isbn || "",
     album.ean || "",

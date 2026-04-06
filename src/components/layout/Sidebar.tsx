@@ -10,12 +10,14 @@ import {
   Download,
   X,
   Layers,
+  FolderKanban,
 } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Catalogue importé", href: "/catalog", icon: Library },
   { name: "Ma collection", href: "/collection", icon: BookOpen },
+  { name: "Groupes de séries", href: "/collection/groups", icon: FolderKanban },
   { name: "Import / Export", href: "/import-export", icon: Download },
   { name: "Paramètres", href: "/settings", icon: Settings },
 ];
@@ -30,6 +32,12 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
+    if (href === "/collection") {
+      if (pathname === "/collection") return true;
+      if (pathname.startsWith("/collection/groups")) return false;
+      return pathname.startsWith("/collection/");
+    }
+    if (href === "/collection/groups") return pathname.startsWith("/collection/groups");
     return pathname.startsWith(href);
   };
 

@@ -28,6 +28,8 @@ const labels = {
   edition: {
     UNKNOWN: "Inconnu",
     FIRST_EDITION: "Première édition",
+    SECOND_EDITION: "Deuxième édition",
+    THIRD_EDITION: "Troisième édition",
     NOT_FIRST_EDITION: "Pas la première",
   },
   confidence: {
@@ -120,7 +122,7 @@ export default function CollectionItemForm({ item, albumReferenceId }: Props) {
             ))}
           </select>
         </Field>
-        <Field label="Première édition">
+        <Field label="Édition">
           <select
             name="editionStatus"
             defaultValue={item.editionStatus}
