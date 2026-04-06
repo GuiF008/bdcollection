@@ -1,21 +1,15 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import {
-  BookOpen,
-  Library,
-  Star,
-  Target,
-  Copy,
-  AlertCircle,
-  Layers,
-} from "lucide-react";
+import { BookOpen, Library, Star, Target, Copy, AlertCircle, Layers } from "lucide-react";
 import { getDashboardV2Stats } from "@/lib/services/collectionItems.service";
+import { listCollectionGroups } from "@/lib/services/collectionGroups.service";
 import KpiCard from "@/components/ui/KpiCard";
 import CoverImage from "@/components/ui/CoverImage";
+import DashboardCollectionPreviewClient from "@/components/dashboard/DashboardCollectionPreviewClient";
 
 export default async function DashboardPage() {
-  const stats = await getDashboardV2Stats();
+  const [stats, groups] = await Promise.all([getDashboardV2Stats(), listCollectionGroups()]);
 
   return (
     <div>
@@ -78,54 +72,10 @@ export default async function DashboardPage() {
       </div>
 
       {stats.collectionSeriesPreview.length > 0 && (
-        <div className="mb-10">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
-              <BookOpen className="h-5 w-5 text-success" />
-              Ma collection · séries suivies
-            </h2>
-            <Link href="/collection" className="text-sm text-primary hover:underline font-medium">
-              Tout voir
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {stats.collectionSeriesPreview.map((s) => (
-              <Link
-                key={s.id}
-                href={`/collection/${s.id}`}
-                className="flex gap-4 rounded-xl border border-border bg-white p-4 hover:border-primary/35 hover:shadow-md transition-all"
-              >
-                <CoverImage src={s.coverImageUrl} alt={s.title} size="lg" className="shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-text-primary line-clamp-2">{s.title}</p>
-                  <p className="text-xs text-text-muted mt-2">
-                    {s.itemCount} suivi{s.itemCount > 1 ? "s" : ""}
-                    {s.ownedCount > 0 && (
-                      <>
-                        {" "}
-                        · <span className="text-success font-medium">{s.ownedCount}</span> possédé
-                        {s.ownedCount > 1 ? "s" : ""}
-                      </>
-                    )}
-                  </p>
-                  {s.catalogAlbumCount > 0 && (
-                    <div className="mt-2">
-                      <div className="h-1.5 rounded-full bg-surface-alt overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-primary"
-                          style={{ width: `${s.ownershipProgressPercent}%` }}
-                        />
-                      </div>
-                      <p className="text-[10px] text-text-muted mt-1 tabular-nums">
-                        {s.ownedCount}/{s.catalogAlbumCount} catalogue · {s.ownershipProgressPercent}%
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
+        <DashboardCollectionPreviewClient
+          summaries={stats.collectionSeriesPreview}
+          groups={groups.map((g) => ({ id: g.id, name: g.name }))}
+        />
       )}
 
       <div className="bg-white rounded-xl border border-border mb-10 overflow-hidden">

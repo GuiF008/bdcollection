@@ -42,3 +42,32 @@ export async function setSeriesCollectionGroups(seriesReferenceId: string, group
     }
   });
 }
+
+/** Ajoute un groupe à chaque série sans retirer les autres appartenances. */
+export async function addSeriesToCollectionGroup(
+  seriesReferenceIds: string[],
+  collectionGroupId: string
+) {
+  const group = await prisma.collectionGroup.findUnique({ where: { id: collectionGroupId } });
+  if (!group) throw new Error("Groupe inconnu");
+
+  const uniqSeries = [...new Set(seriesReferenceIds)].filter(Boolean);
+  if (uniqSeries.length === 0) return { count: 0 };
+
+  await prisma.$transaction(async (tx) => {
+    for (const seriesReferenceId of uniqSeries) {
+      const existing = await tx.seriesGroupMembership.findMany({
+        where: { seriesReferenceId },
+        select: { collectionGroupId: true },
+      });
+      const merged = new Set(existing.map((e) => e.collectionGroupId));
+      merged.add(collectionGroupId);
+      await tx.seriesGroupMembership.deleteMany({ where: { seriesReferenceId } });
+      await tx.seriesGroupMembership.createMany({
+        data: [...merged].map((gid) => ({ seriesReferenceId, collectionGroupId: gid })),
+      });
+    }
+  });
+
+  return { count: uniqSeries.length };
+}

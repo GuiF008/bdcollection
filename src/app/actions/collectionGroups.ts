@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import {
+  addSeriesToCollectionGroup,
   createCollectionGroup,
   deleteCollectionGroup,
   renameCollectionGroup,
@@ -46,5 +47,31 @@ export async function setSeriesCollectionGroupsAction(seriesReferenceId: string,
   revalidatePath("/collection", "layout");
   revalidatePath(`/collection/${seriesReferenceId}`);
   revalidatePath("/collection/groups");
+  revalidatePath("/", "layout");
   return { ok: true as const };
+}
+
+export async function addSeriesToCollectionGroupAction(
+  seriesReferenceIds: string[],
+  collectionGroupId: string
+) {
+  try {
+    if (!collectionGroupId?.trim()) {
+      return { ok: false as const, error: "Choisissez un groupe." };
+    }
+    const ids = [...new Set(seriesReferenceIds)].filter(Boolean);
+    if (ids.length === 0) {
+      return { ok: false as const, error: "Aucune série sélectionnée." };
+    }
+    const { count } = await addSeriesToCollectionGroup(ids, collectionGroupId.trim());
+    revalidatePath("/collection", "layout");
+    revalidatePath("/collection/groups");
+    revalidatePath("/", "layout");
+    for (const id of ids) {
+      revalidatePath(`/collection/${id}`);
+    }
+    return { ok: true as const, count };
+  } catch (e) {
+    return { ok: false as const, error: e instanceof Error ? e.message : "Erreur" };
+  }
 }
