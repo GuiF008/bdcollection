@@ -7,6 +7,7 @@ import { listCollectionGroups } from "@/lib/services/collectionGroups.service";
 import KpiCard from "@/components/ui/KpiCard";
 import CoverImage from "@/components/ui/CoverImage";
 import DashboardCollectionPreviewClient from "@/components/dashboard/DashboardCollectionPreviewClient";
+import DashboardGroupsSection from "@/components/dashboard/DashboardGroupsSection";
 
 export default async function DashboardPage() {
   const [stats, groups] = await Promise.all([getDashboardV2Stats(), listCollectionGroups()]);
@@ -70,6 +71,8 @@ export default async function DashboardPage() {
           size="lg"
         />
       </div>
+
+      <DashboardGroupsSection groups={groups} />
 
       {stats.collectionSeriesPreview.length > 0 && (
         <DashboardCollectionPreviewClient

@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 280" fill="none" aria-hidden="true">
+  <defs>
+    <linearGradient id="bgGrad" x1="48" y1="32" x2="352" y2="248" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4f46e5" stop-opacity="0.12"/>
+      <stop offset="0.5" stop-color="#0ea5e9" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#6366f1" stop-opacity="0.06"/>
+    </linearGradient>
+    <linearGradient id="spineGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#4f46e5"/>
+      <stop offset="1" stop-color="#4338ca"/>
+    </linearGradient>
+    <linearGradient id="coverGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#f8fafc"/>
+      <stop offset="1" stop-color="#e2e8f0"/>
+    </linearGradient>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#1e293b" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+  <rect x="24" y="24" width="352" height="232" rx="28" fill="url(#bgGrad)"/>
+  <ellipse cx="200" cy="248" rx="120" ry="10" fill="#0f172a" opacity="0.06"/>
+  <!-- Groupe : albums empil�s -->
+  <g filter="url(#soft)">
+    <rect x="88" y="148" width="100" height="132" rx="10" fill="url(#coverGrad)" stroke="#cbd5e1" stroke-width="2"/>
+    <rect x="88" y="148" width="22" height="132" rx="10" fill="url(#spineGrad)"/>
+    <rect x="92" y="168" width="12" height="3" rx="1" fill="#ffffff" opacity="0.35"/>
+    <rect x="92" y="178" width="10" height="3" rx="1" fill="#ffffff" opacity="0.2"/>
+  </g>
+  <g filter="url(#soft)">
+    <rect x="150" y="118" width="100" height="162" rx="10" fill="url(#coverGrad)" stroke="#cbd5e1" stroke-width="2"/>
+    <rect x="150" y="118" width="22" height="162" rx="10" fill="url(#spineGrad)"/>
+    <rect x="154" y="142" width="12" height="3" rx="1" fill="#ffffff" opacity="0.35"/>
+    <rect x="154" y="152" width="10" height="3" rx="1" fill="#ffffff" opacity="0.2"/>
+  </g>
+  <g filter="url(#soft)">
+    <rect x="212" y="138" width="100" height="142" rx="10" fill="url(#coverGrad)" stroke="#cbd5e1" stroke-width="2"/>
+    <rect x="212" y="138" width="22" height="142" rx="10" fill="#0ea5e9"/>
+    <rect x="216" y="158" width="12" height="3" rx="1" fill="#ffffff" opacity="0.4"/>
+    <rect x="216" y="168" width="10" height="3" rx="1" fill="#ffffff" opacity="0.25"/>
+  </g>
+  <!-- �tiquette / regroupement -->
+  <path d="M118 72c0-8 6.5-14 14-14h136c7.5 0 14 6 14 14v24c0 4-2 8-5 10l-42 28c-4 3-9 3-13 0l-42-28a12 12 0 0 1-5-10V72z" fill="#ffffff" stroke="#4f46e5" stroke-width="2" opacity="0.95"/>
+  <rect x="148" y="66" width="104" height="8" rx="4" fill="#4f46e5" opacity="0.2"/>
+  <circle cx="156" cy="86" r="5" fill="#4f46e5"/>
+  <circle cx="200" cy="86" r="5" fill="#0ea5e9"/>
+  <circle cx="244" cy="86" r="5" fill="#6366f1"/>
+  <path d="M168 98h64" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+  <path d="M168 106h48" stroke="#cbd5e1" stroke-width="2" stroke-linecap="round"/>
+</svg>
