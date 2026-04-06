@@ -1,13 +1,13 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { BookOpen, Library, Star, Target, Copy, AlertCircle, Layers } from "lucide-react";
+import { BookOpen, Library, Star, Copy, AlertCircle, Layers } from "lucide-react";
 import { getDashboardV2Stats } from "@/lib/services/collectionItems.service";
 import { listCollectionGroupsForDashboard } from "@/lib/services/collectionGroups.service";
 import KpiCard from "@/components/ui/KpiCard";
-import CoverImage from "@/components/ui/CoverImage";
 import DashboardCollectionPreviewClient from "@/components/dashboard/DashboardCollectionPreviewClient";
 import DashboardGroupsSection from "@/components/dashboard/DashboardGroupsSection";
+import DashboardSeriesProgressCollapsible from "@/components/dashboard/DashboardSeriesProgressCollapsible";
 
 export default async function DashboardPage() {
   const [stats, groups] = await Promise.all([
@@ -84,52 +84,7 @@ export default async function DashboardPage() {
         />
       )}
 
-      <div className="bg-white rounded-xl border border-border mb-10 overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
-            <Target className="h-5 w-5 text-primary" />
-            Progression par série (catalogue)
-          </h2>
-          <Link href="/catalog" className="text-sm text-primary hover:underline font-medium">
-            Catalogue
-          </Link>
-        </div>
-        {stats.seriesProgress.length === 0 ? (
-          <div className="p-10 text-center text-text-muted text-sm">
-            Importez une série pour commencer le suivi.
-          </div>
-        ) : (
-          <ul className="divide-y divide-border">
-            {stats.seriesProgress.slice(0, 12).map((s) => {
-              const pct = s.totalRefs > 0 ? Math.round((s.owned / s.totalRefs) * 100) : 0;
-              return (
-                <li key={s.id}>
-                  <Link
-                    href={`/catalog/${s.id}`}
-                    className="flex items-center gap-5 px-6 py-5 hover:bg-surface-alt/40 transition-colors"
-                  >
-                    <CoverImage src={s.coverImageUrl} alt={s.title} size="md" className="shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-base font-medium text-text-primary truncate">{s.title}</p>
-                      <p className="text-sm text-text-muted mt-1">
-                        Possédés {s.owned} / {s.totalRefs} · EO confirmées {s.confirmedEo} · Manquants{" "}
-                        {s.missing}
-                      </p>
-                      <div className="mt-3 h-2 rounded-full bg-surface-alt overflow-hidden max-w-xl">
-                        <div
-                          className="h-full rounded-full bg-primary transition-all"
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                    </div>
-                    <span className="text-lg font-bold text-primary shrink-0 tabular-nums">{pct}%</span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
+      <DashboardSeriesProgressCollapsible series={stats.seriesProgress.slice(0, 12)} />
 
       <div className="flex flex-wrap gap-3">
         <Link
