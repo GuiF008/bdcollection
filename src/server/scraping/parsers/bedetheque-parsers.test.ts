@@ -5,7 +5,7 @@ import {
   parseSeriesMeta,
   planSerieAlbumPageUrls,
 } from "./bedetheque-series.parser";
-import { parseAlbumsFromListe } from "./bedetheque-album.parser";
+import { parseAlbumsFromListe, extractIdFromAlbumHref } from "./bedetheque-album.parser";
 
 const MINI_SERIE_HTML = `<!DOCTYPE html><html><head><title>Test</title>
 <meta name="description" content="Résumé série de test." />
@@ -84,6 +84,28 @@ describe("bedetheque-series.parser", () => {
   });
 });
 
+describe("extractIdFromAlbumHref", () => {
+  it("extrait l'ID depuis un href standard", () => {
+    expect(extractIdFromAlbumHref("/BD-Lanfeust-de-Troy-Tome-1-740.html")).toBe("740");
+  });
+
+  it("extrait l'ID depuis un href avec chemin complet", () => {
+    expect(extractIdFromAlbumHref("https://www.bedetheque.com/BD-Lucky-Luke-Tome-1-12345.html")).toBe("12345");
+  });
+
+  it("retourne null pour un href sans ID numérique final", () => {
+    expect(extractIdFromAlbumHref("/page-sans-id.php")).toBeNull();
+  });
+
+  it("extrait l'ID quand le dernier segment est numérique", () => {
+    expect(extractIdFromAlbumHref("/serie-6-BD-Lanfeust-42.html")).toBe("42");
+  });
+
+  it("retourne null pour un href vide", () => {
+    expect(extractIdFromAlbumHref("")).toBeNull();
+  });
+});
+
 describe("bedetheque-album.parser", () => {
   it("extrait un album depuis la liste", () => {
     const $ = loadHtml(MINI_SERIE_HTML);
@@ -102,5 +124,34 @@ describe("bedetheque-album.parser", () => {
     expect(albums[0].tome).toBe("1");
     expect(albums[0].note).toBe(3.9);
     expect(albums[0].nbVotes).toBe(268);
+  });
+
+  it("utilise le fallback href quand anchor et Identifiant sont absents", () => {
+    const html = `<html><body><ul class="liste-albums"><li>
+      <div class="album-main">
+        <h3><a class="titre" href="/BD-Test-Tome-1-999.html"><span itemprop="name">1. Album Test</span></a></h3>
+        <ul class="infos">
+          <li><label>ISBN :</label>1234567890</li>
+        </ul>
+      </div>
+    </li></ul></body></html>`;
+    const $ = loadHtml(html);
+    const { albums, errors } = parseAlbumsFromListe($, "https://www.bedetheque.com/test.html", "Test", "1");
+    expect(errors).toHaveLength(0);
+    expect(albums).toHaveLength(1);
+    expect(albums[0].sourceAlbumId).toBe("999");
+  });
+
+  it("retourne sourceAlbumId null quand aucune source d'ID n'est disponible", () => {
+    const html = `<html><body><ul class="liste-albums"><li>
+      <div class="album-main">
+        <h3><a class="titre" href="/page-sans-id.php"><span itemprop="name">Album Orphelin</span></a></h3>
+        <ul class="infos"></ul>
+      </div>
+    </li></ul></body></html>`;
+    const $ = loadHtml(html);
+    const { albums } = parseAlbumsFromListe($, "https://www.bedetheque.com/test.html", "Test", "1");
+    expect(albums).toHaveLength(1);
+    expect(albums[0].sourceAlbumId).toBeNull();
   });
 });

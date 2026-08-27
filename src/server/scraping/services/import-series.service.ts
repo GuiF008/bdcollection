@@ -119,7 +119,14 @@ export async function runCatalogImport(params: {
       throw new Error("Métadonnées série insuffisantes après parsing");
     }
 
-    const albumCount = result.albums.filter((a) => a.sourceAlbumId).length;
+    const albumsWithId = result.albums.filter((a) => a.sourceAlbumId);
+
+    if (result.albums.length > 0 && albumsWithId.length === 0) {
+      throw new Error(
+        `${result.albums.length} album(s) parsé(s) mais aucun identifiant unique trouvé. ` +
+        `Structure HTML possiblement modifiée côté Bedetheque.`
+      );
+    }
 
     const firstCover = result.albums.find((x) => x.coverImageUrl)?.coverImageUrl ?? null;
 
@@ -132,15 +139,16 @@ export async function runCatalogImport(params: {
           },
         },
         create: {
-          ...toSeriesReferenceCreate(series, now, albumCount),
+          ...toSeriesReferenceCreate(series, now, albumsWithId.length),
           coverImageUrl: firstCover,
         },
         update: {
-          ...toSeriesReferenceUpdate(series, now, albumCount),
+          ...toSeriesReferenceUpdate(series, now, albumsWithId.length),
           coverImageUrl: firstCover ?? undefined,
         },
       });
 
+      let upsertedCount = 0;
       for (const album of result.albums) {
         if (!album.sourceAlbumId) continue;
         try {
@@ -155,10 +163,19 @@ export async function runCatalogImport(params: {
             create,
             update,
           });
+          upsertedCount++;
         } catch (e) {
           const msg = e instanceof Error ? e.message : String(e);
           warnings.push(`Album ${album.sourceAlbumId}: ${msg}`);
         }
+      }
+
+      // Mettre à jour albumCount avec le nombre réel d'upserts réussis
+      if (upsertedCount !== albumsWithId.length) {
+        await tx.seriesReference.update({
+          where: { id: upserted.id },
+          data: { albumCount: upsertedCount },
+        });
       }
 
       return upserted;
@@ -175,12 +192,12 @@ export async function runCatalogImport(params: {
       },
     });
 
-    await appendJobLog(job.id, `Terminé: ${albumCount} album(s) en base`);
+    await appendJobLog(job.id, `Terminé: ${albumsWithId.length} album(s) en base`);
 
     scrapeLog.info("import catalogue OK", {
       jobId: job.id,
       seriesReferenceId: seriesRef.id,
-      albums: albumCount,
+      albums: albumsWithId.length,
     });
 
     return {

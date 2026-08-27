@@ -17,7 +17,10 @@ export async function globalSearch(query: string) {
           { seriesReference: { title: { contains: q, mode: "insensitive" } } },
         ],
       },
-      include: { seriesReference: { select: { id: true, title: true } } },
+      include: {
+        seriesReference: { select: { id: true, title: true } },
+        collectionItems: { select: { ownershipStatus: true }, take: 1 },
+      },
       orderBy: { title: "asc" },
       take: 20,
     }),

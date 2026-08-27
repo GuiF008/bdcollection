@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (existing) {
+    if (existing && existing.albumCount > 0) {
       const full = await getSeriesReferenceById(existing.id);
       return NextResponse.json({
         fromCache: true,

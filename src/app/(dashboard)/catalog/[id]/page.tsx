@@ -29,6 +29,7 @@ export default async function CatalogSeriesDetailPage({ params }: Props) {
     coverImageUrl: a.coverImageUrl,
     volumeNumber: a.volumeNumber,
     volumeLabel: a.volumeLabel,
+    collectionItemId: a.primaryItem?.id ?? null,
     flags: a.flags,
   }));
 

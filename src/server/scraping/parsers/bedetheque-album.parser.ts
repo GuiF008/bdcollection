@@ -50,6 +50,17 @@ function combineAuteurs(map: LabelMap): string | null {
   return parts.length ? parts.join(" · ") : null;
 }
 
+/**
+ * Extrait l'identifiant numérique depuis un href d'album Bedetheque.
+ * Ex: "/BD-Lanfeust-de-Troy-Tome-1-740.html" → "740"
+ */
+export function extractIdFromAlbumHref(href: string): string | null {
+  if (!href) return null;
+  // Pattern: dernier segment numérique avant .html
+  const m = href.match(/[-/](\d+)\.html$/i);
+  return m?.[1] ?? null;
+}
+
 function detectEditionOriginale(albumMainHtml: string): boolean | null {
   const lower = albumMainHtml.toLowerCase();
   if (lower.includes("première édition") || lower.includes("premiere edition")) return true;
@@ -96,7 +107,9 @@ export function parseAlbumsFromListe(
 
       const map = stripLabelMap($, $li);
       const idText = map["Identifiant"];
-      const sourceAlbumId = anchorName ?? idText ?? null;
+      const hrefId = href ? extractIdFromAlbumHref(href) : null;
+      const dataId = $li.attr("data-id")?.trim() ?? null;
+      const sourceAlbumId = anchorName ?? idText ?? hrefId ?? dataId ?? null;
 
       const couvHref = $li.find("a.browse-couvertures").attr("href");
       const couvImg = $li.find(".couv img").attr("src");

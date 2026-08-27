@@ -15,6 +15,7 @@ export type CatalogAlbumRow = {
   coverImageUrl: string | null;
   volumeNumber: number | null;
   volumeLabel: string | null;
+  collectionItemId: string | null;
   flags: {
     owned: boolean;
     wanted: boolean;
@@ -94,14 +95,6 @@ export default function CatalogAlbumsClient({
           <button
             type="button"
             disabled={bulkPending}
-            onClick={() => runBulk("tracking")}
-            className="px-3 py-1.5 rounded-lg border border-border bg-white text-xs font-medium disabled:opacity-50"
-          >
-            Ajouter au suivi
-          </button>
-          <button
-            type="button"
-            disabled={bulkPending}
             onClick={() => runBulk("owned")}
             className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium disabled:opacity-50"
           >
@@ -122,6 +115,14 @@ export default function CatalogAlbumsClient({
             className="px-3 py-1.5 rounded-lg border border-border bg-white text-xs font-medium disabled:opacity-50"
           >
             À chasser
+          </button>
+          <button
+            type="button"
+            disabled={bulkPending}
+            onClick={() => runBulk("tracking")}
+            className="px-3 py-1.5 rounded-lg border border-border bg-white text-xs font-medium disabled:opacity-50"
+          >
+            Ajouter au suivi
           </button>
           <button
             type="button"
@@ -243,6 +244,8 @@ export default function CatalogAlbumsClient({
                       albumReferenceId={album.id}
                       seriesReferenceId={seriesReferenceId}
                       tracked={album.flags.tracked}
+                      owned={album.flags.owned}
+                      collectionItemId={album.collectionItemId}
                     />
                   </td>
                 </tr>
@@ -290,6 +293,8 @@ export default function CatalogAlbumsClient({
                       albumReferenceId={album.id}
                       seriesReferenceId={seriesReferenceId}
                       tracked={album.flags.tracked}
+                      owned={album.flags.owned}
+                      collectionItemId={album.collectionItemId}
                     />
                   </div>
                 </div>
